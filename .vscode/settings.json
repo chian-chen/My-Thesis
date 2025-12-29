@@ -18,7 +18,10 @@
               "-interaction=nonstopmode",
               "-file-line-error",
               "%DOCFILE%"
-          ]
+          ],
+          "env": {
+            "PATH": "/Library/TeX/texbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+          }
       },
       {
           "name": "biber",

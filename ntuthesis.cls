@@ -708,6 +708,7 @@
 %
 \setlength{\intextsep}{12bp \@plus4pt \@minus2pt}
 \captionsetup{justification=raggedright,singlelinecheck=false}  % To make the caption align left
+% \captionsetup{justification=centering,singlelinecheck=false}  % To make the caption align left
 \captionsetup[table]{position=top,belowskip={12bp-\intextsep},aboveskip=6bp}
 \captionsetup[figure]{position=bottom,belowskip={12bp-\intextsep},aboveskip=6bp}
 \captionsetup[subfigure]{justification=centering}
@@ -912,7 +913,8 @@
 %
 \renewcommand{\contentsname}{\color{\ncs@titlecolor}\centerline{\ntu@tableofcontents}}
 \newcommand{\maketableofcontents}{
-  \cleardoublepage
+  % \cleardoublepage
+  \clearpage
   \phantomsection
   \setlength{\cftbeforetoctitleskip}{-30pt}
   \setlength{\cftaftertoctitleskip}{10pt}
@@ -923,7 +925,8 @@
 \let\oldnumberline\numberline
 \renewcommand{\listfigurename}{\color{\ncs@titlecolor}\centerline{\ntu@listoffigures}}
 \newcommand{\makelistoffigures}{
-  \cleardoublepage
+  % \cleardoublepage
+  \clearpage
   \phantomsection
   \setlength{\cftbeforeloftitleskip}{-30pt}
   \setlength{\cftafterloftitleskip}{10pt}
@@ -934,7 +937,8 @@
 
 \renewcommand{\listtablename}{\color{\ncs@titlecolor}\centerline{\ntu@listoftables}}
 \newcommand{\makelistoftables}{
-  \cleardoublepage
+  % \cleardoublepage
+  \clearpage
   \phantomsection
   \setlength{\cftbeforelottitleskip}{-30pt}
   \setlength{\cftafterlottitleskip}{10pt}
@@ -947,7 +951,8 @@
 % \mainmatter
 %
 \newcommand{\mainmatter}{
-  \cleardoublepage
+  % \cleardoublepage
+  \clearpage
   \ntu@setgeometry{\ntu@geometry@main}
   \pagenumbering{arabic}
   \fontsize{12}{18}\selectfont
@@ -957,7 +962,8 @@
 % \refmatter
 %
 \newcommand{\refmatter}{
-  \cleardoublepage
+  % \cleardoublepage
+  \clearpage
   \phantomsection
   \renewcommand{\bibname}{\ntu@bibliography}
   \addcontentsline{toc}{chapter}{\ntu@bibliography}
@@ -1008,7 +1014,7 @@
     \vspace{-4em}
   \endgroup
   \fontsize{12}{18}\selectfont
-  \thispagestyle{empty} % Disable page number
+  % \thispagestyle{empty} % Disable page number
 }
 
 % [摘要環境]
@@ -1016,25 +1022,25 @@
 %
 % 中文摘要
 \renewenvironment{abstract}{
-  % \clearpage
-  \cleardoublepage % in case the chinese abstract not ends on an odd pag
-  \begin{singlespace}
-    \begin{center}
-      % Title
-      \vspace*{-1em}
-      \fontsize{18}{32}\selectfont
-      \ntu@title\par                            % Title
-      \vspace{2em}
-      % 
-      \fontsize{14}{16}\selectfont
-      研究生: \ntu@author
-      \hfill
-      指導教授: \ntu@advisor~博士\par
-      \vspace{1.5em}
-      \fontsize{16}{24}\selectfont
-      {\ntu@university}~~~{\ntu@institute}\par  % Institute
-    \end{center}
-  \end{singlespace}
+  \clearpage
+  % \cleardoublepage % in case the chinese abstract not ends on an odd pag
+  % \begin{singlespace}
+  %   \begin{center}
+  %     % Title
+  %     \vspace*{-1em}
+  %     \fontsize{18}{32}\selectfont
+  %     \ntu@title\par                            % Title
+  %     \vspace{2em}
+  %     % 
+  %     \fontsize{14}{16}\selectfont
+  %     研究生: \ntu@author
+  %     \hfill
+  %     指導教授: \ntu@advisor~博士\par
+  %     \vspace{1.5em}
+  %     \fontsize{16}{24}\selectfont
+  %     {\ntu@university}~~~{\ntu@institute}\par  % Institute
+  %   \end{center}
+  % \end{singlespace}
   % Disable clearpage to avoid page break after \chapter
   \begingroup
     \let\clearpage\relax
@@ -1052,25 +1058,25 @@
 
 % 英文摘要
 \newenvironment{abstract*}{
-  % \clearpage
-  \cleardoublepage % in case the chinese abstract not ends on an odd pag
-  \begin{singlespace}
-    \begin{center}
-      % Title
-      \vspace*{-1em}
-      \fontsize{18}{32}\selectfont
-      \ntu@title@en\par                            % Title
-      \vspace{2em}
-      % 
-      \fontsize{14}{16}\selectfont
-      Student: \ntu@author@en
-      \hfill
-      Advisor: \ntu@advisor@en,~Ph.D.\par
-      \vspace{1.5em}
-      \fontsize{16}{24}\selectfont
-      {\ntu@institute@en}\par{\ntu@university@en}  % Institute
-    \end{center}
-  \end{singlespace}
+  \clearpage
+  % \cleardoublepage % in case the chinese abstract not ends on an odd pag
+  % \begin{singlespace}
+  %   \begin{center}
+  %     % Title
+  %     \vspace*{-1em}
+  %     \fontsize{18}{32}\selectfont
+  %     \ntu@title@en\par                            % Title
+  %     \vspace{2em}
+  %     % 
+  %     \fontsize{14}{16}\selectfont
+  %     Student: \ntu@author@en
+  %     \hfill
+  %     Advisor: \ntu@advisor@en,~Ph.D.\par
+  %     \vspace{1.5em}
+  %     \fontsize{16}{24}\selectfont
+  %     {\ntu@institute@en}\par{\ntu@university@en}  % Institute
+  %   \end{center}
+  % \end{singlespace}
   % Disable clearpage to avoid page break after \chapter
   \begingroup
     \let\clearpage\relax

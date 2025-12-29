@@ -14,10 +14,10 @@
 % --------------------------------------------------
 
 \documentclass[
-    ncsstyle  = true,                  % ncsstyle = true | false
-    watermark = false,                 % watermark = true | false
+    ncsstyle  = false,                  % ncsstyle = true | false
+    watermark = true,                 % watermark = true | false
     doi       = false,                 % doi = true | false
-    doctype   = draft,                 % doctype = draft | final
+    doctype   = final,                 % doctype = draft | final
     print     = false,                 % print = false | true, switch colors to black
     removetemp = false,                % remove_temp = false | true, remove temperary sections
 ]{ncs-thesis}
@@ -25,17 +25,19 @@
 
 % To speed up project building, comment out contents you don't need
 \includeonly{
-    front/acknowledgement,
-    front/abstract,
-    front/denotation,
+    % front/acknowledgement,
+    % front/abstract,
+    % front/denotation,
+    % contents/template,
     contents/chapter01,
     contents/chapter02,
     contents/chapter03,
     contents/chapter04,
-    back/appendix01,
-    back/appendix02
+    contents/chapter05,
+    contents/chapter06
+    % back/appendix01,
+    % back/appendix02,
 }
-
 \addbibresource{./back/references.bib}
 \input{ntusetup}
 
@@ -52,9 +54,9 @@
 
 % 致謝與論文摘要
 % Acknowledgement and Abstract
-\include{front/acknowledgement}       % 致謝（Acknowledgement）
 \pagenumbering{roman}                 % 重新設定頁碼格式
 \setcounter{page}{1}                  % 重新設定頁碼起始值
+\include{front/acknowledgement}       % 致謝（Acknowledgement）
 \include{front/abstract}              % 摘要（Abstract）
 
 % 生成目錄與符號列表
@@ -64,31 +66,34 @@
 \makelistoffigures                  % 圖目錄（List of Figures）
 \makelistoftables                   % 表目錄（List of Tables）
 \end{singlespacing}
-\include{front/denotation}            % 符號列表（Denotation）
+% \include{front/denotation}            % 符號列表（Denotation）
 
 
 % 論文內容
 % Contents of Thesis
 \mainmatter
-\include{contents/template}
+% \include{contents/template}
 \include{contents/chapter01}
 \include{contents/chapter02}
 \include{contents/chapter03}
 \include{contents/chapter04}
+\include{contents/chapter05}
+\include{contents/chapter06}
 
 % 參考文獻
 % References
 \refmatter
-\begin{tempsection}
-    \printbibliography
-\end{tempsection}
+
+% \begin{tempsection}
+\printbibliography
+% \end{tempsection}
 
 % 附錄
 % Appendices
-\appendix
-\begin{appendices}
-\include{back/appendix01}
-\include{back/appendix02}
-\end{appendices}
+% \appendix
+% \begin{appendices}
+% \include{back/appendix01}
+% \include{back/appendix02}
+% \end{appendices}
 
 \end{document}
