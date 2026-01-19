@@ -1,42 +1,5 @@
 % !TeX root = ../main.tex
 
-% \chapter{Literature Review}
-
-% \section{State-of-the-Art Neural Video Codecs}
-
-% \subsection{Developmental Progression}
-% % 廣泛的講古
-
-% \subsection{Conditional Coding and DCVC Architecture}
-% % (DCVC, DCVC-TCM) 講述他的第一主軸：Condition > Difference，然後描述一下 TCM 對時間萃取的方式。
-
-% \subsection{Single Model, Variable R-D Performance}
-% % (DCVC-HEM, DCVC-DC) 描述他如何做到 Single Model, Multiple Rate-Distortion Points, 
-% % 並在一定程度上克服了以往 GOP 很小的問題（透過合適的 Feature Propogation 跟 Hierarchical quality structure）、也第一次超過 ECM (post-H.266)，也穩穩超過 HM, VTM。另外也從這邊開始設計更複雜的 Conditional Entropy Coding Process。
-
-% \subsection{Wider Quality Range and Real-Time}
-% % (DCVC-FM, DCVC-RT)這邊正式解決幾個大問題：single intra-frame setting 彰顯出 GOP 不再會是問題，
-% % 也成功拉大了單一 model 的 dB range，而在 DCVC-RT，連速度的問題都成功被解決，透過一些簡化、fp16 優化和 
-% % implicit motion 等等手段
-
-% \subsection{summary}
-
-
-% \section{Rate Control Algorithms and Limitations}
-% \subsection{Rate Control in Traditional Codecs}
-% % R-Q, R-$\rho$, and R-$\lambda$ model，這邊還需要一些閱讀。主要從 2014 那篇的 Related Work 聯繫一下超古早的方法們，
-% % 並以 math-2014 作為總結。
-
-% \subsection{Frame-Wise Model-Based Rate Control in NVC}
-% % 2022, 2024 and 2024 ICLR Learned Method 一一介紹。
-
-% \subsection{Analysis of Current NVC Rate Control Gaps}
-% % 攻擊他們的缺點，點出 NVC 架構的變換導致 Rate Control 方法朝夕令改無所適從的問題，但由於這章前半部的鋪陳，
-% % 所以描述 DCVC-RT 確實是一個標誌性的標竿，值得投入研究 Rate Control。另外，這邊可以附上一些 Parameter Tuning 的結果，
-% % 來說明過去方法的不穩定（受 Learning Rate / Initial Point 影響較大），也指出為何 2022, 2024 的那兩篇在目前的 
-% % DCVC-RT 不太適用的原因。
-
-
 \chapter{Literature Review}
 
 \section{State-of-the-Art Neural Video Codecs}
@@ -55,7 +18,7 @@ Despite these advancements, a critical limitation of early methods was their rel
 
 \noindent \textbf{From Residual to Conditional Coding}
 
-Traditional codecs typically adopt a "residual coding" strategy, encoding the difference $r_t = x_t - \tilde{x}_t$. However, this linear subtraction often yields high-frequency, hard-to-compress signals and limits the modeling of non-linear spatiotemporal correlations. From an information-theoretic perspective, residual coding is merely a restricted special case of conditional coding. The entropy of residual coding is theoretically bounded by the entropy of conditional coding:
+Traditional codecs typically adopt a ``residual coding'' strategy, encoding the difference $r_t = x_t - \tilde{x}_t$. However, this linear subtraction often yields high-frequency, hard-to-compress signals and limits the modeling of non-linear spatiotemporal correlations. From an information-theoretic perspective, residual coding is merely a restricted special case of conditional coding. The entropy of residual coding is theoretically bounded by the entropy of conditional coding:
 
 \begin{equation}
 H(x_t - \tilde{x}_t) \ge H(x_t | \tilde{x}_t)
@@ -186,15 +149,28 @@ This section traced the evolutionary trajectory of Neural Video Coding (NVC), hi
 With the fundamental architecture now matured and superior compression efficiency established, the research focus naturally extends to system-level manageability. To bridge the gap between high-performance compression and practical video streaming, precise bitrate regulation becomes critical. This context underscores the value and necessity of developing dedicated rate control mechanisms for neural video codecs, which serves as the primary motivation for the subsequent discussion.
 
 
+
+
+
+
+
+
+
+
+
+
 \section{Rate Control Algorithms and Limitations}
 
 \subsection{Rate Control in Traditional Codecs}
 
-Rate control aims to regulate the output bitstream to meet specific bandwidth constraints while minimizing coding distortion. This is formulated as a constrained optimization problem: minimize distortion $D$ subject to a target rate $R_c$.
+Rate control regulates the encoded bitstream to satisfy bandwidth or buffer constraints while minimizing coding distortion. It is commonly posed as a constrained optimization problem: minimize distortion $D$ subject to a target rate $R_c$.
 
-\noindent \textbf{Limitations of Prior Models (\boldmath$R-Q$ and \boldmath$\rho$-Domain)}
+\noindent \textbf{Limitations of Prior Models (\boldmath$R\!-\!Q$ and \boldmath$\rho$-Domain)}
 
-Early video coding standards (MPEG-2, H.264/AVC) predominantly utilized $R-Q$ models, such as the quadratic model~\cite{math_16}, which assumed the Quantization Parameter (QP) was the sole determinant of bitrate. However, modern codecs like HEVC introduced significant dependencies between Rate-Distortion Optimization (RDO) and rate control, creating a "chicken and egg" dilemma~\cite{math_17}. While $\rho$-domain algorithms~\cite{math_10} proposed a linear relationship between rate and the percentage of zero coefficients, they rely on a one-to-one mapping between $\rho$ and QP, which does not hold for the variable block-size transforms and flexible partitioning structure of HEVC.
+Early standards (e.g., MPEG-2 and H.264/AVC) largely relied on parametric $R\!-\!Q$ models, including the quadratic model~\cite{math_16}, implicitly treating the Quantization Parameter (QP) as the dominant (or even sole) control knob for bitrate. This assumption becomes fragile in modern hybrid codecs. In HEVC, for instance, the final rate is strongly influenced by decisions made inside Rate-Distortion Optimization (RDO)—such as mode selection, partitioning, and transform choices—which themselves depend on the Lagrange multiplier $\lambda$ and the cost formulation used during RDO. This creates a classic ``chicken and egg'' dilemma~\cite{math_17}: to choose an appropriate QP (or $\lambda$) that meets the target rate, the encoder needs an accurate prediction of the rate produced by RDO; yet the actual rate cannot be known until RDO has been executed under a specific QP/$\lambda$ setting. Consequently, rate control must either (i) approximate RDO outcomes using imperfect models, or (ii) iteratively adjust QP/$\lambda$ with additional computation, and both options can degrade either accuracy or efficiency.
+
+Similarly, $\rho$-domain methods~\cite{math_10} model rate as approximately linear in the fraction of zero transform coefficients. In earlier settings, they were effective because $\rho$ could be mapped to QP in a near one-to-one manner. In HEVC, however, variable block-size transforms and a highly flexible partitioning structure break this mapping: identical QP values may yield different $\rho$ under different block partitions and transform configurations, and conversely similar $\rho$ can arise from distinct QP choices. As a result, the core $\rho \leftrightarrow \text{QP}$ assumption weakens, limiting the reliability of $\rho$-domain rate control for modern codec structures.
+
 
 \noindent \textbf{The \boldmath$\lambda$-Domain Rate Control Algorithm}
 
@@ -245,17 +221,10 @@ Table~\ref{tab:rc_theory_comparison} provides a theoretical comparison of the co
 \small
 \renewcommand{\arraystretch}{1.5} % 維持行高
 
-% 定義欄寬：
-% 1. l: 自動寬度 (只放 cite，會很窄)
-% 2. c: 自動寬度 (只放公式，會很窄)
-% 3. X: 自動延展，分配剩餘空間
 \begin{tabularx}{\textwidth}{@{} l c >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}X @{}}
 \toprule
 \textbf{Study} & \textbf{RC Model} & \textbf{Bit Allocation Strategy} & \textbf{Updating Mechanism} \\ \midrule
 
-% [50]
-% \rule{0pt}{3ex} 用來撐開上方高度，解決「沒空隙」
-% \makecell[t] 用來強制靠上對齊，解決「跟右邊文字不對齊」
 \cite{50} & 
 \makecell[t]{\rule{0pt}{3ex}$R$-$\lambda$ Model \\ $\lambda = \alpha \cdot R^{\beta}$} & 
 \textbf{Hierarchical (Sliding Window)} \newline 
@@ -297,7 +266,7 @@ No iterative update. Relies on the generalization of the pre-trained Rate Implem
 
 To the best of our knowledge, Li et al.~\cite{51} proposed the first rate control scheme tailored for Learned Video Compression (LVC). This method is built upon the variable-rate framework by Lin et al.~\cite{48}, enabling continuous bitrate adjustment via a Lagrange multiplier $\lambda$.
 
-The core innovation is the \textbf{R-D-$\lambda$ model}. In contrast to block-level dependency in conventional codecs, the authors model the frame-level dependency via a chain rule of partial derivatives. They introduce a scalar parameter $p_t$ to quantify the linear dependency between the distortion of consecutive frames:
+The core innovation is the \textbf{R-D-\boldmath${\lambda}$ model}. In contrast to block-level dependency in conventional codecs, the authors model the frame-level dependency via a chain rule of partial derivatives. They introduce a scalar parameter $p_t$ to quantify the linear dependency between the distortion of consecutive frames:
 \begin{equation}
 p_t = \frac{\partial D_{t+1}}{\partial D_t}.
 \end{equation}
@@ -352,88 +321,110 @@ A critical observation in this work is that traditional frame-level allocation o
 
 \subsubsection*{Fully Neural Rate Control System (Zhang et al., ICLR 2024~\cite{28})}
 
-While previous works adapted traditional empirical models, Zhang et al.~\cite{28} argue that such fixed mathematical forms may fail to capture the complex, non-linear rate-distortion characteristics of deep video compression. Consequently, they proposed the first fully neural network-based rate control system.
+While previous works adapted traditional empirical models, Zhang et al.~\cite{28} argue that fixed mathematical forms struggle to capture the non-linear rate-distortion characteristics of deep video compression. To address this, they proposed the first fully neural network-based rate control system, as illustrated in Fig.~\ref{fig:zhang_rc}(a).
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\linewidth]{imgs/neural_rc_arch.png}
+    \caption{\textbf{Overview of the fully neural rate control system proposed by Zhang et al.~\cite{28}.} (a) The framework utilizes a Weight Estimation Network for hierarchical allocation and a Rate Implementation Network for parameter prediction. (b) Visualization of the hierarchical allocation strategy, distributing bits from miniGoP level down to frame level based on feature importance.}
+    \label{fig:zhang_rc}
+\end{figure}
 
 \noindent \textbf{Two-Level Rate Allocation Strategy}
 
-To address the limitations of uniform allocation, the authors introduced a hierarchical strategy consisting of a \textbf{miniGoP-level} and a \textbf{Frame-level} allocation.
-First, the target bits for a miniGoP ($R_{mg}$) are determined using a sliding window approach. Subsequently, a \textbf{Weight Estimation Network} extracts spatiotemporal features from consecutive frames to assign an importance weight $w_t$ to each frame. The target bitrate $R_t$ for the current frame is calculated as:
+To overcome the limitations of uniform allocation, the authors introduced a hierarchical strategy (Fig.~\ref{fig:zhang_rc}(b)) comprising \textbf{miniGoP-level} and \textbf{Frame-level} allocation.
+Initially, the target bits for a miniGoP ($R_{mg}$) are determined via a sliding window. Subsequently, a \textbf{Weight Estimation Network} extracts spatiotemporal features to assign an importance weight $w_t$ to each frame. By leveraging these weights, the system implicitly models inter-frame dependency, calculating the target bitrate $R_t$ as:
 \begin{equation}
-R_{t}=\frac{R_{mg}-\hat{R}_{mg}}{\sum_{j=t}^{i+N_{m}-1}w_{j}}\times w_{t}.
+R_{t}=\frac{R_{mg}-\hat{R}_{mg}}{\sum_{j=t}^{i+N_{m}-1}w_{j}}\times w_{t},
 \end{equation}
-This allows the system to implicitly model inter-frame dependency, allocating more bits to reference frames with higher impact features.
+where $\hat{R}_{mg}$ denotes the used bits in the current miniGoP. This mechanism ensures that reference frames with higher impact features receive a larger budget allocation.
 
 \noindent \textbf{Rate Implementation via Feature Regression}
 
-This method employs a \textbf{Rate Implementation Network} to directly map the target bitrate $R_t$ to the encoding parameter $\lambda_t$. The mapping is formulated as a regression problem conditioned on both current content and historical statistics. A critical normalization step is introduced to modulate the feature vector $\vec{V}_{R}$ derived from the input bitrate:
+Instead of iterative search algorithms, this method employs a \textbf{Rate Implementation Network} to directly map the target bitrate $R_t$ to the encoding parameter $\lambda_t$. As shown in the blue block of Fig.~\ref{fig:zhang_rc}(a), this mapping is formulated as a regression problem conditioned on content and historical statistics. A critical normalization step modulates the feature vector $\vec{V}_{R}$ derived from the input bitrate:
 \begin{equation}
 \vec{V}_{R}^{\prime}=\frac{\vec{V}_{R}-\mu}{\theta},
 \end{equation}
-where $(\mu, \theta)$ are normalization parameters fused from image and historical features. This design allows the network to predict precise $\lambda$ values in a single forward pass, avoiding the latency of iterative search algorithms.
+where $(\mu, \theta)$ are normalization parameters fused from image and historical features. This design enables precise $\lambda$ prediction in a single forward pass, significantly reducing encoding latency.
 
 \subsection{Comparative Analysis and Limitations}
 
-While the reviewed methods show progress, a systematic analysis reveals significant gaps when applying them to real-time scenarios. Table~\ref{tab:rc_limits_comparison} details the experimental scope and specific limitations of each approach.
+While the reviewed methods show progress, a systematic analysis reveals significant gaps when applying them to real-time scenarios. Table~\ref{tab:rc_limits_comparison} provides a granular breakdown of the experimental settings used in prior works. Specifically, we focus on three critical parameters often overlooked in literature but vital for reproducibility and practical deployment:
+
+\begin{enumerate}
+    \item \textbf{Intra Period ($N_{intra}$):} Indicates the frequency of I-frames. For real-time applications like cloud gaming, an "infinite GOP" setting ($N_{intra} = -1$) is typically required to minimize latency spikes, yet many studies rely on frequent I-frame resets.
+    \item \textbf{Bit Allocation Unit:} Defines the granularity at which the rate control algorithm allocates bits (often referred to as the GOP unit in RC contexts). The absence of this specification makes reproducing the bit allocation logic nearly impossible.
+    \item \textbf{Test Frames:} The duration of test sequences. Short sequences risk "overfitting" to a single scene's complexity. Algorithms must be tested on longer durations to verify stability during scene cuts and distinct complexity shifts.
+\end{enumerate}
 
 \begin{table*}[!h]
 \centering
-\caption{Comparison of Experimental Settings and Practical Limitations.}
+\caption{Comparison of Experimental Settings and Practical Limitations in Existing Studies.}
 \label{tab:rc_limits_comparison}
 \small
-\renewcommand{\arraystretch}{1.5}
+\renewcommand{\arraystretch}{1.4} % 稍微增加行高讓換行後的文字不擁擠
 
-% Adjusted column widths for better spacing
-\begin{tabularx}{\textwidth}{@{} l >{\hsize=0.95\hsize\raggedright\arraybackslash}X >{\hsize=1.05\hsize\raggedright\arraybackslash}X @{}}
+\begin{tabularx}{\textwidth}{@{} l >{\raggedright\arraybackslash\hsize=0.65\hsize}X c c c >{\raggedright\arraybackslash\hsize=1.35\hsize}X @{}}
 \toprule
-\textbf{Study} & \textbf{Experimental Context} & \textbf{Limitations} \\ \midrule
+\textbf{Study} & \textbf{Target Codec} & \textbf{\boldmath$N_{intra}$} & \textbf{GOP} & \textbf{Frames} & \textbf{Critical Limitations} \\ \midrule
 
-\textbf{Li et al.} \cite{50} & 
-\textbf{Codec}: Standard HEVC (HM 8.0) \newline
-\textbf{Config}: Low Delay / Random Access \newline
-\textbf{Settings}: GOP Size: 4; \newline Frames: Not mentioned & 
-Successful validation on traditional CODEC, but usually yields poor performance when applied to NVC. \\ \midrule
+Li et al.~\cite{50} & 
+HEVC \newline (HM 8.0) & 
+-1 & 
+4 & 
+-1 & 
+Validated on traditional codecs; fails to address the feature-domain characteristics of NVC. \\ \midrule
 
-\textbf{Li et al.} \cite{51} & 
-\textbf{Codec}: LVC (DVC base + Variable Rate) \newline
-\textbf{Datasets}: HEVC, UVG \newline
-\textbf{Settings}: GOP Size: 12; \newline Frames: Not mentioned & 
-Uses an extremely small GOP and is based on a very early (2019) NVC architecture. \\ \midrule
+Li et al.~\cite{51} & 
+DVC + LVC & 
+12 & 
+12 & 
+N/A & 
+Uses extremely short GOPs, masking potential error propagation issues inherent to infinite-GOP settings. \\ \midrule
 
-\textbf{Liao et al.} \cite{52} & 
-\textbf{Codecs}: DVC, DMVC, DCVC-HEM, DCVC-DC \newline
-\textbf{Datasets}: Vimeo-90K (Train), HEVC \newline
-\textbf{Settings}: GOP Size: Not mentioned; \newline Frames: 192 & 
-Many implementation details are unclear (e.g., $Q_s$ and $Q_c$ are shown, but reliance seems to be on $Q_s$ only), and the GOP setting is completely missing. \\ \midrule
+Liao et al.~\cite{52} & 
+DVC, DMVC, DCVC-HEM, DCVC-DC & 
+N/A & 
+N/A & 
+192 & 
+Critical bit allocation unit is missing; implementation details are ambiguous regarding $Q_s$ usage. \\ \midrule
 
-\textbf{Zhang et al.} \cite{28} & 
-\textbf{Codecs}: DVC, FVC, DCVC, AlphaVC \newline
-\textbf{Datasets}: Vimeo-90K (Train), HEVC, UVG, MCL-JCV \newline
-\textbf{Settings}: GOP Size: 100; \newline Frames: Not mentioned & 
-Requires three-stage training, introduces computational overhead for real-time applications, and appears to have a training gap for latest CODECs with complex entropy models. \\ \bottomrule
-
+Zhang et al.~\cite{28} & 
+DVC, FVC, DCVC, AlphaVC & 
+100 & 
+4 & 
+100 & 
+Requires complex three-stage training; high computational overhead unsuitable for real-time constraints. \\ \bottomrule
 \end{tabularx}
+\begin{flushleft}
+\footnotesize{\textit{Note: "N/A" indicates data not available in the original paper. $N_{intra}$ denotes the I-frame interval. A value of -1 indicates the full sequence length (for Frames) or a single I-frame setting (for $N_{intra}$).}}
+\end{flushleft}
 \end{table*}
 
-\noindent \textbf{Inconsistency in Evaluation Protocols}
+\subsubsection*{Gap between Academic Prototypes and Practical Deployment}
 
-A major hurdle in benchmarking NVC rate control is the lack of standardized evaluation protocols. As shown in Table~\ref{tab:rc_limits_comparison}, different studies adopt vastly different Group of Pictures (GOP) settings. For instance, Li et al.~\cite{51} evaluated their dependency model on short GOPs ($N=12$), whereas Liao et al.~\cite{52} utilized longer sequences ($N=192$). This inconsistency often masks the potential stability issues of algorithms when exposed to the "infinite GOP" (Intra-period = -1) setting commonly used in low-delay applications like cloud gaming, where error propagation can accumulate indefinitely.
+A critical challenge in current NVC rate control research is the disconnect between evaluation protocols and real-world application requirements. As detailed in Table~\ref{tab:rc_limits_comparison}, many existing studies adopt settings that diverge significantly from industrial standards. For instance, Li et al.~\cite{51} evaluated their model on short sequences ($N_{intra}=12$). While such settings were acceptable for early-stage NVCs—which were primarily proofs of concept—they obscure stability issues that only manifest in long-duration streaming. Modern low-delay applications require stability over infinite GOPs ($N_{intra} = -1$), where error propagation can accumulate indefinitely if not properly managed.
 
-\noindent \textbf{Ambiguity in Parameter Initialization and Sensitivity}
+Furthermore, the duration of test sequences (Test Frames) plays a pivotal role. Short clips often lack significant scene changes, allowing rigid algorithms to perform deceptively well. Our analysis suggests that true robustness can only be verified when the rate controller is forced to adapt to drastic variance in scene complexity over extended periods.
 
-Most model-based approaches (e.g., $R-\lambda$ or $R-Q$ models) rely on iterative parameter updates. However, the literature often lacks transparency regarding \textbf{initialization strategies} and \textbf{hyperparameter sensitivity}.
+\noindent \textbf{Ambiguity in Parameter Initialization}
+
+In addition to inconsistent protocols, the literature often lacks transparency regarding initialization strategies and hyperparameter sensitivity.
 \begin{itemize}
-    \item \textbf{Initialization:} The starting values of model parameters ($\alpha, \beta$) significantly impact the convergence speed. An improper initialization can lead to severe bitrate fluctuation in the first few GOPs, causing buffer overflow or underflow before the model stabilizes.
-    \item \textbf{Learning Rates:} Algorithms utilizing gradient descent (e.g., Eqs. 9 and 12) are highly sensitive to the step size. Our preliminary experiments indicate that a fixed learning rate often fails to adapt to the drastic variance in scene complexity found in real-time scenarios. A rate too small causes sluggish adaptation during scene cuts, while a rate too large induces oscillation.
+    \item \textbf{Initialization:} Improper starting values for model parameters ($\alpha, \beta$) can cause severe bitrate fluctuations in the initial phase, leading to buffer violations before the model converges.
+    \item \textbf{Adaptability:} Algorithms using fixed learning rates often fail to adapt to the variance in scene complexity found in real-time scenarios. A rate too small causes sluggish adaptation during scene cuts, while a rate too large induces oscillation.
 \end{itemize}
 
-\noindent \textbf{The Architecture-Control Mismatch with DCVC-RT}
+\noindent \textbf{The Necessity of Aligning Rate Control with Mature NVC Baselines}
 
-The most critical gap lies in the decoupling of rate control algorithms from the evolving NVC architectures, specifically regarding the \textbf{Conditional Coding} paradigm used in DCVC-RT.
+The most significant gap, however, is not merely algorithmic but stems from the evolution of NVC capability. Previous rate control methods were developed for early NVC architectures that struggled to compete with traditional codecs in terms of efficiency and complexity. In contrast, \textbf{DCVC-RT} has emerged as a landmark architecture, achieving compression performance and runtime efficiency that align with practical deployment needs. This shift necessitates a re-evaluation of rate control strategies:
 
 \begin{enumerate}
-    \item \textbf{Obsolescence of Dependency Models:} Early methods like the $p$-domain model~\cite{51} relied on calculating inter-frame dependency chains ($\frac{\partial D_{t+1}}{\partial D_t}$). While effective for short GOPs or residual-based codecs (e.g., DVC), this approach becomes computationally intractable and numerically unstable for Conditional Coding. In DCVC-RT, temporal information is propagated via high-dimensional feature memories rather than simple pixel residuals, diluting the linear dependency assumption and making explicit dependency modeling inaccurate over long sequences.
-    
-    \item \textbf{Model Mismatch in Feature Modulation:} Recent codecs like DCVC-FM and DCVC-RT achieve variable bitrates through Feature Modulation or Quantization Scaling ($q_s$). The underlying mathematical relationship between these latent scalers and the output bitrate has shifted. As evidenced by the transition from simple residual coding to complex generative restoration, the traditional hyperbolic $R-\lambda$ model or the power-law $R-Q$ model (derived for HEVC or older NVCs) may no longer be the optimal fit. Blindly applying these models to DCVC-RT results in high prediction errors.
+    \item \textbf{From Experimental to Practical Baselines:} 
+    Early rate control schemes were often tested on NVCs that were not yet viable for production. As DCVC-RT has effectively bridged the gap towards practical application—becoming a strong candidate for large-scale deployment—its associated rate control modules must essentially "graduate" from academic experimentation to robust, industrial-grade reliability. Future work on such a mature codec implies a requirement for stability and precision comparable to commercial standards.
+
+    \item \textbf{The Value of Architecture-Specific Optimization:} 
+    While tailoring a rate control algorithm to a specific NVC architecture (like DCVC-RT) inherently involves a risk of overfitting to that architecture's specific modules, this trade-off is justified by the architecture's maturity. Much like optimizing rate control for H.265 remains highly valuable despite the existence of H.266, refining control mechanisms for a deployment-ready NVC like DCVC-RT possesses significant practical value. The focus is no longer just on proving that neural rate control is possible, but on ensuring it operates seamlessly within a high-performance framework that is likely to see actual adoption.
 \end{enumerate}
 
-In conclusion, while DCVC-RT sets a new benchmark for compression efficiency, there is currently no rate control algorithm specifically optimized for its unique characteristics: \textbf{conditional coding, infinite P-frame structure, and feature-domain quantization}. This necessitates the development of a lightweight, adaptive, and mathematically grounded rate control scheme, which is the primary focus of this thesis.
+In conclusion, while DCVC-RT sets a new benchmark for compression efficiency, existing rate control algorithms lag behind its practical readiness. The lack of a rate control scheme that matches the utility and stability of DCVC-RT creates a bottleneck for its deployment. Therefore, this thesis focuses on developing a robust rate control mechanism specifically aligned with DCVC-RT, aiming to complete the final puzzle piece for a truly practical neural video coding system.

@@ -15,7 +15,7 @@ Shannon defined a quantity called \textit{self-information} based on probability
 For a source generating a sequence of independent and identically distributed (i.i.d) symbols $X$, the average self-information is known as the \textbf{Entropy} ($H$):
 
 \begin{equation}
-    H(S) = - \sum P(X) \log_2 P(X)
+    H(X) = - \sum P(X) \log_2 P(X)
 \end{equation}
 
 \noindent \textbf{Relevance to Compression}
@@ -37,7 +37,7 @@ Spatial redundancy arises from the strong statistical correlation between neighb
     \label{fig:spatial_redundancy}
 \end{figure}
 
-To exploit this redundancy, \textbf{Differential Pulse-Code Modulation (DPCM)} is commonly employed. DPCM operates by predicting the current pixel $x_n$ based on its reconstructed neighbor $x_{n-1}$ and encoding the difference, known as the residual ($d_n = x_n - x_{n-1}$). As demonstrated in Fig. \ref{fig:distribution}, while the original pixel intensities spans the full dynamic range (top), the prediction residuals form a \textbf{peaked Laplacian-like probability distribution} centered at zero (bottom). This energy compaction significantly reduces the entropy, thereby facilitating more efficient entropy coding.
+To exploit the correlation between these neighboring pixels, \textbf{Differential Pulse-Code Modulation (DPCM)} is historically employed. DPCM operates by predicting the current pixel $x_n$ based on its reconstructed neighbor $x_{n-1}$ and encoding the difference, known as the residual ($d_n = x_n - x_{n-1}$). As demonstrated in Fig. \ref{fig:distribution}, while the original pixel intensities spans the full dynamic range (top), the prediction residuals form a \textbf{peaked Laplacian-like probability distribution} centered at zero (bottom). This energy compaction significantly reduces the entropy, thereby facilitating more efficient entropy coding.
 
 \begin{figure}[!h]
     \centering
@@ -66,34 +66,43 @@ The coding efficiency is largely determined by the \textbf{residual}, defined as
 \noindent \textbf{Coding Redundancy}
 \label{subsec:coding_redundancy}
 
-Coding redundancy occurs when the average codeword length exceeds the theoretical minimum limit determined by the source entropy. While fixed-length coding assigns equal bits to all symbols regardless of their frequency, \textbf{Variable-Length Coding (VLC)}, such as \textbf{Huffman coding}~\cite{huffman}, minimizes redundancy by assigning shorter codewords to high-probability symbols (e.g., symbol 'F' in Fig.\ref{fig:huffman_tree}) and longer codewords to rare ones. As illustrated in Fig.\ref{fig:huffman_tree}, the Huffman algorithm yields an average code length of $\bar{L} \approx 2.24$ bits, which is significantly lower than the fixed-length approach ($L=3$ bits) and closely approximates the source entropy ($H \approx 2.22$ bits).
-
-\begin{figure}[!h]
-    \centering
-    \includegraphics[width=0.9\columnwidth]{imgs/huffman.pdf}
-    \caption{Huffman tree for a six-symbol source with average code length $\bar{L} \approx 2.24$.}
-    \label{fig:huffman_tree}
-\end{figure}
+If we use a fixed number of bits for every symbol, we waste space. \textbf{Variable-Length Coding (VLC)} solves this by assigning short codes to frequent symbols and long codes to rare ones. Classical methods like Huffman coding~\cite{huffman} use this principle to approach the theoretical entropy limit. Modern standards typically use Arithmetic Coding, which is discussed later in Section~\ref{subsec:entropy_coding}.
 
 \noindent \textbf{Color Space Representation}
 
-While video signals are typically captured in the RGB domain, the Red, Green, and Blue channels exhibit high statistical correlation. To remove this redundancy, video coding standards transform RGB into the \textbf{YUV color space} (specifically YCbCr), which separates the signal into \textbf{Luminance (\boldmath$Y$)} and \textbf{Chrominance (\boldmath$U, V$)}. This transformation exploits a fundamental property of the \textbf{Human Visual System (HVS)}: the eyes are significantly more sensitive to brightness changes than to color variations. Consequently, the chroma components can be spatially subsampled (e.g., \textbf{4:2:2} or \textbf{4:2:0}) to reduce the bitrate. As demonstrated in Fig. \ref{fig:color_space}, the structural information is concentrated in the $Y$ channel, while the $U$ and $V$ channels appear smoother. The final reconstruction after 4:2:2 subsampling confirms that this reduction in color resolution results in negligible perceptual degradation.
+Videos are captured in RGB, but the human eye is more sensitive to brightness than color. To save data, we convert RGB into the \textbf{YUV} color space. The Luminance ($Y$) keeps the details, while the Chrominance ($U, V$) is often reduced in resolution (e.g., 4:2:0 subsampling). This reduces the file size with almost no visible loss in quality.
+% \noindent \textbf{Coding Redundancy}
+% \label{subsec:coding_redundancy}
 
-\begin{figure}[!t]
-    \centering
-    \includegraphics[width=1\textwidth]{imgs/color_space_422.pdf}
-    \caption{Decomposition of the 'Astronaut' image into YUV components and the reconstructed output.}
-    \label{fig:color_space}
-\end{figure}
+% Coding redundancy occurs when the average codeword length exceeds the theoretical minimum limit determined by the source entropy. While fixed-length coding assigns equal bits to all symbols regardless of their frequency, \textbf{Variable-Length Coding (VLC)}, such as \textbf{Huffman coding}~\cite{huffman}, minimizes redundancy by assigning shorter codewords to high-probability symbols (e.g., symbol 'F' in Fig.\ref{fig:huffman_tree}) and longer codewords to rare ones. As illustrated in Fig.\ref{fig:huffman_tree}, the Huffman algorithm yields an average code length of $\bar{L} \approx 2.24$ bits, which is significantly lower than the fixed-length approach ($L=3$ bits) and closely approximates the source entropy ($H \approx 2.22$ bits).
+
+% \begin{figure}[!h]
+%     \centering
+%     \includegraphics[width=0.9\columnwidth]{imgs/huffman.pdf}
+%     \caption{Huffman tree for a six-symbol source with average code length $\bar{L} \approx 2.24$.}
+%     \label{fig:huffman_tree}
+% \end{figure}
+
+% \noindent \textbf{Color Space Representation}
+
+% While video signals are typically captured in the RGB domain, the Red, Green, and Blue channels exhibit high statistical correlation. To remove this redundancy, video coding standards transform RGB into the \textbf{YUV color space} (specifically YCbCr), which separates the signal into \textbf{Luminance (\boldmath$Y$)} and \textbf{Chrominance (\boldmath$U, V$)}. This transformation exploits a fundamental property of the \textbf{Human Visual System (HVS)}: the eyes are significantly more sensitive to brightness changes than to color variations. Consequently, the chroma components can be spatially subsampled (e.g., \textbf{4:2:2} or \textbf{4:2:0}) to reduce the bitrate. As demonstrated in Fig. \ref{fig:color_space}, the structural information is concentrated in the $Y$ channel, while the $U$ and $V$ channels appear smoother. The final reconstruction after 4:2:2 subsampling confirms that this reduction in color resolution results in negligible perceptual degradation.
+
+% \begin{figure}[!t]
+%     \centering
+%     \includegraphics[width=1\textwidth]{imgs/color_space_422.pdf}
+%     \caption{Decomposition of the 'Astronaut' image into YUV components and the reconstructed output.}
+%     \label{fig:color_space}
+% \end{figure}
 
 \subsection{The Rate-Distortion (R-D) Trade-off}
 \label{subsec:rd_tradeoff}
 
 While entropy sets the theoretical limit for lossless compression, practical video coding relies on \textbf{lossy compression} to satisfy bandwidth constraints. This necessitates a fundamental trade-off: minimizing Bitrate ($R$) while minimizing Distortion ($D$).
 
-\noindent \textbf{Quantization and Reconstruction} % 修改後的標題
 
-In both hybrid frameworks and Neural Video Coding (NVC), \textbf{Quantization} serves as the decisive mechanism to govern this trade-off. It reduces the precision of transform coefficients (or latent features) to reduce information entropy. As illustrated in Fig.\ref{fig:quant_matrix}, the process typically involves an element-wise division by a quantization step or matrix ($Q$), followed by a rounding operation.
+\noindent \textbf{Quantization and Reconstruction}
+
+In both hybrid frameworks and Neural Video Coding (NVC), \textbf{Quantization} serves as the decisive mechanism to govern this trade-off. It maps high-precision transform coefficients (or latent features) to a finite set of discrete levels, thereby reducing information entropy. 
 
 \begin{figure}[!h]
     \centering
@@ -102,12 +111,12 @@ In both hybrid frameworks and Neural Video Coding (NVC), \textbf{Quantization} s
     \label{fig:quant_matrix}
 \end{figure}
 
-The figure demonstrates the impact of quantization granularity through two distinct paths:
+Figure \ref{fig:quant_matrix} illustrates this concept using a block-based quantization matrix, common in traditional standards. The process typically involves division by a step size (or matrix element), followed by a rounding operation.
+The figure demonstrates the impact of quantization granularity:
 \begin{itemize}
-    \item \textbf{High Quality Path (Top):} Using a fine quantization matrix ($Q_{fine}$) preserves high-frequency details. The reconstruction is nearly lossless (e.g., the DC coefficient is restored as $125$), but the resulting symbol matrix retains high entropy, requiring more bits to encode.
-    \item \textbf{Low Bitrate Path (Bottom):} Using a coarse quantization matrix ($Q_{coarse}$) forces many high-frequency coefficients to zero (indicated in red). While this sparsity significantly reduces the bitrate, it introduces irreversible quantization error. As highlighted in the reconstructed matrix ($W'$), the DC coefficient is distorted ($120 \neq 125$), representing the $D$ term in the R-D trade-off.
+    \item \textbf{High Quality Path (Top):} Using fine quantization steps preserves details. The reconstruction is nearly lossless (e.g., the value is restored as $125$), but the result retains high entropy.
+    \item \textbf{Low Bitrate Path (Bottom):} Using coarse quantization forces many small values to zero. While this sparsity significantly reduces the bitrate, it introduces irreversible error (e.g., the value becomes $120$).
 \end{itemize}
-
 
 \noindent \textbf{Lagrangian Rate-Distortion Optimization}
 
@@ -123,10 +132,24 @@ Here, the Lagrange multiplier $\lambda$ acts as a trade-off parameter. A larger 
 
 \begin{figure}[!h]
     \centering
-    \includegraphics[width=0.85\columnwidth]{imgs/rd_curve.pdf}
+    \includegraphics[width=0.8\columnwidth]{imgs/rd_curve.pdf}
     \caption{Rate-Distortion (R-D) performance curves evaluated on the UVG dataset, illustrating the trade-off between quality (PSNR) and bitrate (bpp).}
     \label{fig:rd_curve_RDO}
 \end{figure}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 \section{From Traditional Standards to Neural Video Coding}
@@ -155,78 +178,124 @@ On the right side of Fig.~\ref{fig:dvc_framework}, the DVC framework replaces th
 
 The most significant advantage of this approach is the capability for \textit{joint optimization}. Unlike traditional codecs where modules are tuned individually, all components in the NVC framework—including motion estimation, compression, and residual coding—are implemented as neural networks and optimized simultaneously through a single loss function. This objective considers the trade-off between the number of compression bits and the reconstruction quality, allowing the modules to collaborate effectively to improve overall coding efficiency.
 
+% \subsection{Temporal Prediction: Motion Vectors to Optical Flow}
+% \label{subsec:temporal_prediction}
+
+% In traditional video coding standards like H.264 and H.265, temporal redundancy is reduced using block-based motion estimation. The frame is partitioned into rectangular blocks, and a search algorithm finds the best matching block in the reference frame. The displacement is represented by a Motion Vector (MV). While efficient, this approach assumes a rigid translational motion model, which often fails to capture complex non-rigid motions (e.g., deformation, rotation) and results in block artifacts at low bitrates.
+
+% Neural Video Coding addresses this limitation by adopting \textit{Optical Flow} for motion estimation. Unlike the sparse motion vectors in traditional codecs, NVC estimates a dense motion field, providing a motion vector for every pixel.
+
+% \noindent \textbf{Pyramid-based Motion Estimation}
+
+% As illustrated in Figure~\ref{fig:motion_processing}(a), DVC utilizes a CNN-based optical flow network to estimate the motion field $v_t$. specifically employing the SPyNet (Spatial Pyramid Network) architecture~\cite{35}. SPyNet adopts a coarse-to-fine spatial pyramid structure, which allows it to efficiently handle large motions by estimating residual flow at multiple scales.
+
+% Crucially, in the DVC framework, this motion estimation module is not fixed but is \textbf{jointly optimized} end-to-end. Through Rate-Distortion Optimization (RDO), the network learns to generate optical flow maps that are not only accurate but also "compressible." As observed in, this joint training encourages the motion field to be sparse (similar to zero motion vectors in H.265) to minimize the bit cost effectively.
+
+% \noindent \textbf{Motion Compensation and Refinement}
+
+% In traditional codecs, motion compensation is a linear overlay operation. However, simple warping based on optical flow can introduce artifacts. To mitigate this, DVC introduces a dedicated \textbf{Motion Compensation Network} (post-warping). This CNN takes the warped frame, the reference frame, and the motion vectors as concatenated inputs to generate a refined predicted frame $\bar{x}_t$. This step effectively removes warping artifacts and serves a similar role to the loop filters in traditional standards but in a learnable, non-linear manner.
+
+% \noindent \textbf{Compressing the Motion Information}
+
+% Since dense optical flow $v_t$ contains significantly more data than block-based motion vectors, transmitting it directly is prohibitively expensive. DVC employs an \textit{MV Encoder-Decoder Network} (Figure~\ref{fig:motion_processing}(b)) to compress this dense field.
+
+% \begin{itemize}
+%     \item \textbf{MV Encoder:} Transforms the raw optical flow $v_t$ into a compact latent representation $m_t$ using a series of strided convolutions and non-linear Generalized Divisive Normalization (GDN) layers.
+%     \item \textbf{Quantization:} To enable end-to-end training (where standard rounding is non-differentiable), quantization is approximated by adding uniform noise during training, while standard rounding is used during inference.
+%     \item \textbf{MV Decoder:} Reconstructs the quantized latents $\hat{m}_t$ back into the motion field $\hat{v}_t$, which is then used for motion compensation.
+% \end{itemize}
+
+% \begin{figure}[!h]
+%     \centering
+%     \begin{subfigure}[b]{0.48\textwidth}
+%         \centering
+%         \includegraphics[width=\textwidth]{imgs/SpyNet.png}
+%         \caption{Optical Flow Estimation using a pyramid structure (SPyNet) to handle large motions~\cite{35}.}
+%         \label{fig:spynet}
+%     \end{subfigure}
+%     \hfill
+%     \begin{subfigure}[b]{0.48\textwidth}
+%         \centering
+%         \includegraphics[width=\textwidth]{imgs/MV_Encoder.png}
+%         \caption{MV Encoder and Decoder Network designed to compress the dense optical flow~\cite{17}.}
+%         \label{fig:mv_codec}
+%     \end{subfigure}
+%     \caption{The motion processing pipeline in DVC.}
+%     \label{fig:motion_processing}
+% \end{figure}
+
 \subsection{Temporal Prediction: Motion Vectors to Optical Flow}
 \label{subsec:temporal_prediction}
 
-In traditional video coding standards like H.264 and H.265, temporal redundancy is reduced using block-based motion estimation. The frame is partitioned into rectangular blocks, and a search algorithm finds the best matching block in the reference frame. The displacement is represented by a Motion Vector (MV). While efficient, this approach assumes a rigid translational motion model, which often fails to capture complex non-rigid motions (e.g., deformation, rotation) and results in block artifacts at low bitrates.
-
-Neural Video Coding addresses this limitation by adopting \textit{Optical Flow} for motion estimation. Unlike the sparse motion vectors in traditional codecs, NVC estimates a dense motion field, providing a motion vector for every pixel.
+Traditional codecs split the image into blocks and assume objects move rigidly. This often fails for complex motions (like deformation). NVC solves this by using \textbf{Optical Flow}, which estimates motion for every single pixel.
 
 \noindent \textbf{Pyramid-based Motion Estimation}
 
-As illustrated in Figure~\ref{fig:motion_processing}(a), DVC utilizes a CNN-based optical flow network to estimate the motion field $v_t$. specifically employing the SPyNet (Spatial Pyramid Network) architecture~\cite{35}. SPyNet adopts a coarse-to-fine spatial pyramid structure, which allows it to efficiently handle large motions by estimating residual flow at multiple scales.
+DVC uses a network called SPyNet~\cite{35} (see Fig. \ref{fig:spynet}). It uses a "pyramid" structure to handle both large and small movements efficiently. Through joint training, the network learns to generate motion fields that are accurate but also easy to compress.
 
-Crucially, in the DVC framework, this motion estimation module is not fixed but is \textbf{jointly optimized} end-to-end. Through Rate-Distortion Optimization (RDO), the network learns to generate optical flow maps that are not only accurate but also "compressible." As observed in, this joint training encourages the motion field to be sparse (similar to zero motion vectors in H.265) to minimize the bit cost effectively.
+\noindent \textbf{Motion Compensation and Compression}
 
-\noindent \textbf{Motion Compensation and Refinement}
-
-In traditional codecs, motion compensation is a linear overlay operation. However, simple warping based on optical flow can introduce artifacts. To mitigate this, DVC introduces a dedicated \textbf{Motion Compensation Network} (post-warping). This CNN takes the warped frame, the reference frame, and the motion vectors as concatenated inputs to generate a refined predicted frame $\bar{x}_t$. This step effectively removes warping artifacts and serves a similar role to the loop filters in traditional standards but in a learnable, non-linear manner.
-
-\noindent \textbf{Compressing the Motion Information}
-
-Since dense optical flow $v_t$ contains significantly more data than block-based motion vectors, transmitting it directly is prohibitively expensive. DVC employs an \textit{MV Encoder-Decoder Network} (Figure~\ref{fig:motion_processing}(b)) to compress this dense field.
-
-\begin{itemize}
-    \item \textbf{MV Encoder:} Transforms the raw optical flow $v_t$ into a compact latent representation $m_t$ using a series of strided convolutions and non-linear Generalized Divisive Normalization (GDN) layers.
-    \item \textbf{Quantization:} To enable end-to-end training (where standard rounding is non-differentiable), quantization is approximated by adding uniform noise during training, while standard rounding is used during inference.
-    \item \textbf{MV Decoder:} Reconstructs the quantized latents $\hat{m}_t$ back into the motion field $\hat{v}_t$, which is then used for motion compensation.
-\end{itemize}
+After warping the frame with optical flow, a \textbf{Motion Compensation Network} refines the result to remove artifacts. Since pixel-wise optical flow is very large, it must be compressed. DVC uses an \textbf{MV Encoder-Decoder} (Fig. \ref{fig:mv_codec}) to compress the motion field into a small latent representation.
 
 \begin{figure}[!h]
     \centering
     \begin{subfigure}[b]{0.48\textwidth}
         \centering
         \includegraphics[width=\textwidth]{imgs/SpyNet.png}
-        \caption{Optical Flow Estimation using a pyramid structure (SPyNet) to handle large motions~\cite{35}.}
+        \caption{Optical Flow Estimation (SPyNet)~\cite{35}.}
         \label{fig:spynet}
     \end{subfigure}
     \hfill
     \begin{subfigure}[b]{0.48\textwidth}
         \centering
         \includegraphics[width=\textwidth]{imgs/MV_Encoder.png}
-        \caption{MV Encoder and Decoder Network designed to compress the dense optical flow~\cite{17}.}
+        \caption{MV Encoder and Decoder Network~\cite{17}.}
         \label{fig:mv_codec}
     \end{subfigure}
     \caption{The motion processing pipeline in DVC.}
     \label{fig:motion_processing}
 \end{figure}
 
+% \subsection{Spatial Transformation: Linear to Non-linear}
+% \label{subsec:spatial_transform}
+
+% In traditional frameworks, spatial redundancy is removed using linear transforms, notably the Discrete Cosine Transform (DCT)~\parencite{wiegand2003using}. As shown in Fig.~\ref{fig:dct_basis}, DCT projects residuals onto fixed frequency basis functions, compacting energy into low-frequency coefficients for efficient quantization.
+
+% \begin{figure}[!h]
+%     \centering
+%     \includegraphics[width=0.4\columnwidth]{imgs/dct_basis.png}
+%     \caption{The $8\times8$ DCT basis functions used in traditional video coding standards.}
+%     \label{fig:dct_basis}
+% \end{figure}
+
+% \subsubsection*{Limitations of Linear Transforms}
+
+% While effective, the block-based nature of DCT partitions images into independent $8\times8$ blocks, as seen in Fig.~\ref{fig:transform_comparison}(b). This rigid partitioning often fails to capture structures crossing block boundaries, causing blocking artifacts at low bitrates and limiting rate allocation flexibility.
+
+% \noindent \textbf{The NVC Approach: Learned Non-linear Transforms}
+
+% NVC frameworks replace fixed bases with deep autoencoders (e.g., CNNs with GDN~\cite{65}) to map residuals into latent representations. Unlike the linear DCT, this learned transformation is highly non-linear and spatially continuous.
+
+% Fig.~\ref{fig:transform_comparison}(c) visualizes the energy distribution of the learned latents. In contrast to disjointed DCT blocks, the NVC encoder acts as a semantic feature extractor, naturally concentrating activations on structural details like object boundaries. This \textbf{structural awareness} enables the Rate Control module to allocate bits based on visual saliency rather than fixed partitions, significantly improving perceptual quality.
+
+% \begin{figure}[!h]
+%     \centering
+%     \includegraphics[width=1\textwidth]{imgs/transform.pdf}
+%     \caption{Visual comparison of spatial energy distribution. This energy heatmap is extracted from the latent space of the model~\cite{63} using the \textbf{CompressAI} library~\cite{32}.}
+%     \label{fig:transform_comparison}
+% \end{figure}
+
 \subsection{Spatial Transformation: Linear to Non-linear}
 \label{subsec:spatial_transform}
 
-In traditional frameworks, spatial redundancy is removed using linear transforms, notably the Discrete Cosine Transform (DCT)~\parencite{wiegand2003using}. As shown in Fig.~\ref{fig:dct_basis}, DCT projects residuals onto fixed frequency basis functions, compacting energy into low-frequency coefficients for efficient quantization.
+Traditional standards use the Discrete Cosine Transform (DCT)~\cite{wiegand2003using}. DCT is linear and processes images in fixed $8\times8$ blocks. This can cause "blocking artifacts" and cannot capture complex structures that cross block boundaries.
 
-\begin{figure}[!h]
-    \centering
-    \includegraphics[width=0.4\columnwidth]{imgs/dct_basis.png}
-    \caption{The $8\times8$ DCT basis functions used in traditional video coding standards.}
-    \label{fig:dct_basis}
-\end{figure}
-
-\noindent \textbf{Limitations of Linear Transforms}
-
-While effective, the block-based nature of DCT partitions images into independent $8\times8$ blocks, as seen in Fig.~\ref{fig:transform_comparison}(b). This rigid partitioning often fails to capture structures crossing block boundaries, causing blocking artifacts at low bitrates and limiting rate allocation flexibility.
-
-\noindent \textbf{The NVC Approach: Learned Non-linear Transforms}
-
-NVC frameworks replace fixed bases with deep autoencoders (e.g., CNNs with GDN~\cite{65}) to map residuals into latent representations. Unlike the linear DCT, this learned transformation is highly non-linear and spatially continuous.
-
-Fig.~\ref{fig:transform_comparison}(c) visualizes the energy distribution of the learned latents. In contrast to disjointed DCT blocks, the NVC encoder acts as a semantic feature extractor, naturally concentrating activations on structural details like object boundaries. This \textbf{structural awareness} enables the Rate Control module to allocate bits based on visual saliency rather than fixed partitions, significantly improving perceptual quality.
+NVC replaces this with \textbf{Learned Non-linear Transforms} (CNNs with GDN layers~\cite{65}). As shown in Fig. \ref{fig:transform_comparison}, the learned features (c) are not limited to blocks. They automatically focus on important structures like object boundaries. This allows the system to allocate bits more intelligently based on visual importance.
 
 \begin{figure}[!h]
     \centering
     \includegraphics[width=1\textwidth]{imgs/transform.pdf}
-    \caption{Visual comparison of spatial energy distribution. This energy heatmap is extracted from the latent space of the model~\cite{63} using the \textbf{CompressAI} library~\cite{32}.}
+    \caption{Visual comparison of spatial energy distribution. The NVC model~\cite{63} extracts semantic features (c) using \textbf{CompressAI}~\cite{32}, unlike the rigid blocks in traditional DCT (b).}
     \label{fig:transform_comparison}
 \end{figure}
 
@@ -279,13 +348,9 @@ Minimizing this NLL loss encourages the network to learn a latent representation
 
 After quantization, the resulting discrete symbols must be compressed into a compact bitstream. While traditional standards employ fixed or adaptive lookup tables, NVC relies on Arithmetic Coding driven by learned probability distributions.
 
-% \noindent \textbf{From Huffman to Arithmetic Coding}
-
-% Recall from Section \ref{subsec:coding_redundancy} that \textbf{Huffman coding} minimizes redundancy by assigning shorter codewords to frequent symbols. However, it is fundamentally limited by the requirement to assign an \textit{integer} number of bits to each symbol. This inefficiency becomes significant when the symbol probability is high (e.g., if $P(A)=0.9$, the ideal code length is $-\log_2(0.9) \approx 0.15$ bits, but Huffman must assign at least 1 bit).
-
 \noindent \textbf{From Huffman to Arithmetic Coding}
 
-Recall from Section~\ref{subsec:coding_redundancy} that \textbf{Huffman coding} maps symbols to integer-length codewords. While optimal for symbol-by-symbol coding, this integer constraint becomes a significant bottleneck when handling symbols with very high probabilities (e.g., if $P(A)=0.9$, the ideal code length is $-\log_2(0.9) \approx 0.15$ bits, but Huffman must assign at least 1 bit).
+Traditional Huffman coding maps symbols to integer-length codewords. While optimal for for symbol-by-symbol coding, this integer constraint becomes a significant bottleneck when handling symbols with very high probabilities (e.g., if $P(A)=0.9$, the ideal code length is $-\log_2(0.9) \approx 0.15$ bits, but Huffman must assign at least 1 bit).
 
 \textbf{Arithmetic Coding (AC)} overcomes this limitation by encoding a sequence of symbols into a single floating-point number, effectively allowing for the allocation of fractional bits. As illustrated in Figure~\ref{fig:arithmetic}, the probability interval $[0, 1)$ is recursively subdivided. A high-probability symbol retains a larger sub-interval, requiring fewer bits to resolve the final coordinate. This property allows AC to approach the theoretical \textbf{Entropy} limit ($H$) much more closely than Huffman coding.
 
@@ -300,7 +365,7 @@ Recall from Section~\ref{subsec:coding_redundancy} that \textbf{Huffman coding} 
 
 The efficiency of Arithmetic Coding is strictly bounded by how accurately the estimated probability $P(\hat{y})$ matches the true data distribution. In H.264/AVC and H.265/HEVC, this is handled by \textbf{CABAC (Context-based Adaptive Binary Arithmetic Coding)}~\cite{marpe2003context}. CABAC utilizes hand-crafted context models that update on-the-fly based on previously coded symbols (neighbors). NVC adopts a similar philosophy but replaces these manual context updates with neural networks.
 
-\noindent \textbf{Learned Entropy Models}
+\subsubsection*{Learned Entropy Models}
 
 To provide precise probability estimates for the arithmetic coder, NVC employs CNN-based "Entropy Models".
 
@@ -333,7 +398,6 @@ Figure~\ref{fig:hyperprior_arch} details the operational flow of the Hyperprior 
     \item This $\hat{z}$ is transmitted first (as side info).
     \item A \textbf{Hyper-Decoder} ($h_s$) uses $\hat{z}$ to estimate the mean and standard deviation scales ($\mu, \sigma$) of the Gaussian distribution for each pixel in $\hat{y}$.
 \end{enumerate}
-% By conditioning the probability model on these parameters, the arithmetic coder can allocate more bits to complex regions (high $\sigma$) and fewer to smooth regions, significantly improving the rate-distortion performance.
 
 By conditioning the probability model on these parameters, the arithmetic coder can allocate more bits to complex regions (high $\sigma$) and fewer to smooth regions, significantly improving the rate-distortion performance.
 

@@ -2,22 +2,21 @@
 
 \begin{abstract}
 
-近年來，神經網絡視訊編碼（Neural Video Compression, NVC）在壓縮效率上已展現出超越傳統編碼標準
-（如 H.265/HEVC 與 H.266/VVC）的潛力。然而，現有的 NVC 研究多聚焦於網絡架構的率失真（Rate-Distortion, R-D）
-性能優化，卻鮮少探討實際應用中至關重要的碼率控制（Rate Control）機制。由於 NVC 的編碼特性具有高度非線性且對量化參數
-（Quantization Parameter, QP）的變動極為敏感，直接套用傳統的碼率控制演算法往往會導致 QP 劇烈震盪，
-進而嚴重損害幀間預測的品質與整體的壓縮效率。
+神經視訊編碼 (Neural Video Coding, NVC) 近年來在壓縮效率上已展現出超越傳統視訊編碼標準 (如 H.265/HEVC, H.266/VVC) 的潛力。然而，如何將其實現於實時應用 (如視訊會議、直播) 仍是一大挑戰。儘管 DCVC-RT 等高效能架構已突破了計算複雜度的瓶頸，但目前針對此類先進 NVC 模型的實時碼率控制 (Rate Control) 機制研究仍然匱乏，且現有方法難以適應神經網路特有的非線性與非穩態特徵。
+
+本論文提出了一種針對實時神經視訊編碼器 DCVC-RT 的自適應狀態空間碼率控制系統。首先，透過全域搜索分析，本研究確立了 DCVC-RT 的碼率與量化參數 (QP) 之間呈現對數關係 (Logarithmic R-Q Model)，並利用此線性化特性引入遞迴最小平方法 (Recursive Least Squares, RLS) 進行在線參數估計。相較於傳統梯度下降法，RLS 演算法具備極快的收斂速度與穩定性。針對 DCVC-RT 特有的週期性特徵刷新機制，本研究進一步提出了「雙狀態 RLS (Dual-State RLS)」策略，將一般幀與刷新幀的參數估計分離，有效解決了刷新幀作為異常值導致的模型參數劇烈震盪 (Model Shattering) 問題。此外，本系統結合了滑動視窗預算分配、層級化質量結構以及智慧輸出平滑化機制，以確保長期流量的穩定性與視覺品質。
+
+實驗結果顯示，在 UVG、MCL-JCV 與 HEVC Class B 等多個標準數據集上，本研究所提出的方法均優於現有的基準方法。特別是在 UVG 數據集上，相比於基準算法，本方法實現了平均 14.9\% 的 BD-Rate 性能提升，並將平均碼率誤差 (BRE) 控制在 1.92\% 的高精準度範圍內。同時，計算複雜度分析顯示本方法的額外時間開銷僅約 1\%，證實了其在實時應用中的可行性。本研究成功填補了高效能 NVC 與實時傳輸需求之間的缺口，為神經視訊編碼的實際部署提供了關鍵的技術解決方案。
+
 
 \end{abstract}
 
 \begin{abstract*}
 
-In recent years, Neural Video Compression (NVC) has demonstrated significant potential in 
-surpassing traditional video coding standards, such as H.265/HEVC and H.266/VVC, in terms of compression efficiency. 
-However, existing research on NVC predominantly focuses on optimizing Rate-Distortion (R-D) performance through 
-architectural innovations, often overlooking the critical aspect of Rate Control (RC) required for practical applications. 
-Due to the highly non-linear nature of NVC and its sensitivity to Quantization Parameter (QP) fluctuations, 
-directly applying traditional rate control algorithms often leads to severe QP oscillations. 
-These oscillations disrupt inter-frame prediction quality, thereby degrading the overall compression efficiency.
+Neural Video Coding (NVC) shows great potential to surpass traditional standards like H.265/HEVC and H.266/VVC in compression efficiency. However, realizing NVC in real-time applications remains challenging. While architectures like DCVC-RT have reduced computational complexity, effective real-time Rate Control (RC) mechanisms for these models are scarce, as existing methods struggle with the non-linear and non-stationary nature of neural networks.
+
+This thesis proposes an adaptive state-space RC system specifically designed for the real-time neural video coder, DCVC-RT. Global search analysis reveals a logarithmic relationship between bitrate and the Quantization Parameter (QP) in DCVC-RT. Leveraging this linearity, a Recursive Least Squares (RLS) algorithm is introduced for online parameter estimation, offering superior convergence and stability over gradient-based methods. To address the periodic feature refresh mechanism in DCVC-RT, a "Dual-State RLS" strategy is proposed. By separating parameter estimation for normal and refresh frames, this strategy prevents model shattering caused by outliers. Furthermore, the system integrates sliding window budget allocation, a hierarchical quality structure, and smart output smoothing to ensure traffic stability and visual quality.
+
+Experimental results on UVG, MCL-JCV, and HEVC Class B datasets demonstrate that the proposed method significantly outperforms baselines. On the UVG dataset, it achieves a 14.9\% BD-Rate improvement and maintains an average Bitrate Error (BRE) of 1.92\%. With approximately 1\% additional time overhead, the method proves feasible for real-time use. This study bridges the gap between high-performance NVC and real-time transmission needs, offering a key solution for practical deployment.
 
 \end{abstract*}

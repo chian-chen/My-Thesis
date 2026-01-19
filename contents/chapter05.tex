@@ -1,23 +1,4 @@
-% % !TeX root = ../main.tex
-
-% \chapter{Experiments and Results}
-
-% \section{Experimental Setup}
-% \subsection{Datasets (UVG, MCL-JCV, HEVC Class B)}
-% % 介紹這三個 Dataset 各自的特色，並聲明我選擇的設定：統一 1080p. 且每個影片都採用 intra=-1（只有一個 I frame 其餘都是 P frame）, 並使用整個影片長度，沒有另外 crop。
-
-% \subsection{Implementation Details}
-% % Baseline Setup, 詳細描述各個方法的參數、包含初始值、learning rate、還有許多吧啦吧啦。
-
-% \subsection{Evaluation Benchmarks}
-% % Rate Error, RD-Performance (PSNR, MSSSIM), Stable（?）, Time Overhead
-
-% \section{Performance Comparison}
-% % Table 比較
-
-% \section{Ablation Studies and Parametric Analysis}
-% % 一些之前其他 work 都沒有完整提供的 Parameter tuning 過程
-
+% !TeX root = ../main.tex
 
 \chapter{Experiments and Results}
 
@@ -27,103 +8,482 @@ To comprehensively evaluate the effectiveness of the proposed rate control schem
 
 \subsection{Datasets}
 
-We selected three widely used datasets to evaluate the performance of our method across diverse video contents and motion characteristics. To ensure a fair and consistent comparison, all video sequences were standardized to a resolution of $1920 \times 1080$. Furthermore, we adopted a "Low-Delay P" configuration (intra period set to -1), where only the first frame is encoded as an I-frame, and all subsequent frames are encoded as P-frames. We utilized the full length of each video sequence without cropping to test the long-term stability of the rate control algorithm.
+We selected three widely used datasets to evaluate the performance of our method across diverse video contents and motion characteristics. To ensure a fair and consistent comparison, all video sequences were standardized to a resolution of $1920 \times 1080$. Furthermore, we adopted a ``Low-Delay P'' configuration (intra period set to -1), where only the first frame is encoded as an I-frame, and all subsequent frames are encoded as P-frames. We utilized the full length of each video sequence without cropping to test the long-term stability of the rate control algorithm.
 
 \begin{itemize}
-    \item \textbf{UVG Dataset}~\cite{20}: This dataset contains high frame rate (120fps) 4K sequences. For our experiments, we downsampled these sequences to 1080p. The UVG dataset is characterized by high temporal redundancy and smooth motion, making it suitable for evaluating the efficiency of inter-frame prediction and rate stability over long durations.
+    \item \textbf{UVG Dataset}~\cite{20}: This dataset offers high frame rate (120fps) sequences in both 4K and 1080p resolutions. For our experiments, we utilized the native 1080p sequences provided by the dataset. The UVG dataset is characterized by high temporal redundancy and smooth motion, making it suitable for evaluating the efficiency of inter-frame prediction and rate stability over long durations. Most sequences in this dataset consist of 600 frames.
     
-    \item \textbf{MCL-JCV Dataset}~\cite{26}: The MCL-JCV dataset comprises 30 video sequences with a resolution of $1920 \times 1080$. It covers a wide variety of content types, including distinct textures and motion patterns (e.g., camera panning, zooming, and complex object motion). This diversity is crucial for assessing the generalization capability of the rate control model.
+    \item \textbf{MCL-JCV Dataset}~\cite{26}: The MCL-JCV dataset comprises 30 video sequences with a resolution of $1920 \times 1080$. It covers a wide variety of content types, including distinct textures and motion patterns (e.g., camera panning, zooming, and complex object motion). This diversity is crucial for assessing the generalization capability of the rate control model. The sequence lengths typically range between 120 and 150 frames.
     
-    \item \textbf{HEVC Class B Dataset}~\cite{38}: We utilized the standard Class B sequences from the HEVC common test conditions. These sequences are natively $1920 \times 1080$ and are widely used in the literature [28, 51] for benchmarking video compression performance. They present challenging scenarios with varying degrees of object motion and background complexity.
+    \item \textbf{HEVC Class B Dataset}~\cite{38}: We utilized the standard Class B sequences from the HEVC common test conditions. These sequences are natively $1920 \times 1080$ and are widely used in the literature~\parencite{28, 51} for benchmarking video compression performance. They present challenging scenarios with varying degrees of object motion and background complexity, with lengths ranging from 200 to 600 frames.
 \end{itemize}
 
-\subsection{Implementation Details}
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=1.0\linewidth]{imgs/hard_cut_sequences.png} % 請將此處替換為你生成的圖片檔名
+    \caption{Examples of sequences containing hard cuts (editorial shot transitions). To align with the continuous scene characteristic of real-time streaming, sequences such as \textit{Kimono} from HEVC Class B and several clips from MCL-JCV were excluded from our evaluation set.}
+    \label{fig:hard_cuts}
+\end{figure}
 
-\subsubsection{Baseline Methods}
-We compared our proposed method against several state-of-the-art baselines to validate its performance. The baselines include:
-\begin{itemize}
-    \item \textbf{Anchor (DVC/FVC without RC):} The original learned video compression model running with fixed $\lambda$ values, serving as the upper bound for R-D performance.
-    \item \textbf{Baseline A [Li et al., ICASSP 2022]:} A representative method utilizing an R-D-$\lambda$ model with iterative parameter updates.
-    \item \textbf{Baseline B [Zhang et al., ICLR 2024]:} A neural rate control approach using a two-level allocation strategy.
-    \item \textbf{[Your Baseline Name]:} [Description of any other specific baseline you implemented].
-\end{itemize}
+Since our target scenario is real-time streaming and video conferencing, which typically feature continuous scenes, we applied a specific filtering criterion to the selected datasets. As illustrated in Fig.~\ref{fig:hard_cuts}, certain sequences in the HEVC Class B and MCL-JCV datasets contain editorial shot transitions or ``hard cuts.'' These abrupt scene changes can cause instantaneous spikes in bit rate or quality fluctuation, potentially skewing the evaluation of the rate control algorithm's stability in a way that does not reflect our target use case. Therefore, we excluded these sequences to ensure a more relevant assessment. Specifically, the \textit{Kimono} sequence was excluded from the HEVC Class B dataset, and sequences indices [04, 06, 12, 18, 19, 20, 21, 27, 29, 30] were excluded from the MCL-JCV dataset.
 
-\subsubsection{Parameter Settings}
-Our proposed framework was implemented using PyTorch on an NVIDIA [INSERT GPU MODEL, e.g., RTX 3090] GPU. 
-
-For the **Rate-Quality (R-Q) Model**, we utilized the [INSERT MODEL TYPE, e.g., Logarithmic] relationship as defined in Equation [X]. The initial parameters were set to $\alpha = [VALUE]$ and $\beta = [VALUE]$.
-The **neural network components** (e.g., the bit allocation network) were optimized using the Adam optimizer with an initial learning rate of $1 \times 10^{-4}$. The learning rate was decayed by a factor of 0.1 every [INSERT EPOCHS] epochs.
-
-During inference, the target bitrate $R_{target}$ was set based on the average bitrate of the anchor method at four quality levels ($\lambda \in \{256, 512, 1024, 2048\}$ or corresponding Q-levels). The sliding window size for the bitrate buffer was set to [INSERT VALUE, e.g., 40 frames].
-
-\subsection{Evaluation Benchmarks}
+\section{Evaluation Benchmarks}
 
 To provide a holistic evaluation, we employed four key metrics focusing on accuracy, quality, stability, and efficiency.
 
-\subsubsection{Rate Control Accuracy}
+\subsection{Rate Control Accuracy}
 The primary goal of rate control is to minimize the deviation between the target bitrate and the actual output bitrate. We measure this using the absolute Bitrate Error (BRE), defined as:
+
 \begin{equation}
     \Delta R = \left| \frac{R_{target} - R_{actual}}{R_{target}} \right| \times 100\%
 \end{equation}
-where $R_{target}$ is the allocated bit budget and $R_{actual}$ is the actual file size of the encoded sequence.
 
-\subsubsection{R-D Performance}
-We evaluate the coding efficiency using the Bjontegaard Delta Rate (BD-Rate)~\cite{06}. BD-Rate measures the percentage of bitrate savings required to achieve the same objective quality compared to an anchor. We utilize two quality metrics for this calculation:
+\subsection{R-D Performance}
+We evaluate the coding efficiency using the Bjøntegaard Delta Rate (BD-Rate)~\cite{06}. BD-Rate measures the percentage of bitrate savings required to achieve the same objective quality compared to an anchor. In our implementation, the BD-Rate is calculated using Piecewise Cubic Hermite Interpolating Polynomial (PCHIP) interpolation in the logarithmic rate domain to ensure curve stability. We utilize two quality metrics for this calculation:
+
 \begin{itemize}
     \item \textbf{PSNR (Peak Signal-to-Noise Ratio):} Evaluating pixel-level fidelity.
     \item \textbf{MS-SSIM (Multi-Scale Structural Similarity):} Evaluating perceptual quality.
 \end{itemize}
 
-\subsubsection{Bitrate Stability}
-To assess the smoothness of the output bitstream, which is critical for streaming applications, we analyze the frame-level bitrate fluctuation. Lower variance in frame-level bitrate indicates a more stable rate control mechanism.
+Since raw MS-SSIM values often saturate near 1.0, making direct linear interpolation prone to errors, we transform the MS-SSIM values into the decibel (dB) domain prior to calculating the BD-Rate. This transformation is defined as:
 
-\subsubsection{Time Overhead}
+\begin{equation}
+    MS\text{-}SSIM_{dB} = -10 \log_{10}(1 - MS\text{-}SSIM)
+\end{equation}
+
+This logarithmic scaling aligns the metric's behavior with PSNR, allowing for more consistent R-D curve fitting and comparison.
+
+\subsection{Time Overhead}
 We measure the computational complexity using the Time Ratio (TR), defined as the total encoding time of the method with rate control divided by the encoding time of the anchor (without rate control):
+
 \begin{equation}
     TR = \frac{T_{RC}}{T_{Anchor}}
 \end{equation}
+
 A TR close to 1.0 indicates negligible computational overhead.
+
+\section{Implementation Details}
+
+\subsection{Experimental Settings}
+
+To ensure a comprehensive evaluation of the rate control algorithms, we configured the DCVC-RT framework with specific encoding parameters (summarized in Fig.~\ref{fig:rd_setup}). 
+
+\begin{itemize}
+    \item \textbf{Target Rates:} We selected four operating points to represent a wide range of quality levels. The target bitrates ($R_{target}$) were generated using the original DCVC-RT model with base QP values of $\{5, 20, 35, 50\}$.
+    \item \textbf{Intra Period:} We adopted a ``Low-Delay P'' configuration by setting the Intra Period to $-1$. This implies that only the very first frame of the sequence is encoded as an I-frame, while all subsequent frames are encoded as P-frames, simulating a real-time streaming scenario.
+    \item \textbf{Sequence Length:} Unlike many studies that test only short clips, we utilized the \textbf{full length} of each video sequence (ranging from 100 to 600 frames depending on the dataset) without cropping. This allows us to rigorously test the long-term stability and error propagation of the rate control methods.
+\end{itemize}
+
+\begin{figure}[!h]
+    \centering
+    \includegraphics[width=0.8\linewidth]{imgs/rd_performance_setup.pdf} % 請替換為你的 R-D Curve 圖片檔名
+    \caption{Rate-Distortion performance on the UVG dataset. The red dotted lines illustrate our target rate selection strategy: four distinct bitrates are determined based on the anchor QP settings ($5, 20, 35, 50$) to evaluate the controller's performance across different bandwidth constraints.}
+    \label{fig:rd_setup}
+\end{figure}
+
+\subsection{Baseline Methods}
+
+We compared our proposed method against several state-of-the-art baselines to validate its performance. The baselines include:
+
+\begin{itemize}
+    \item \textbf{Anchor (Rule-based):} The rule-based rate control method proposed by the DCVC authors in the Appendix of DCVC-FM~\cite{15}. It incorporates the framework's default inter-frame QP variation patterns to determine the bit budget.
+    \item \textbf{Baseline-Lambda (2014)}~\cite{50}: A representative $\lambda$-domain rate control mechanism. Although originally designed for traditional codecs, the underlying $R-\lambda$ relationship remains applicable to modern codecs.
+    \item \textbf{Baseline 2022p (Li et al., ICASSP 2022)}~\cite{51}: A pioneering rate control scheme for LVC that proposes an R-D-$\Lambda$ model to characterize inter-frame dependency. It employs a staged parameter update mechanism to ensure robust estimation and accurate rate allocation.
+    \item \textbf{Baseline 2024 (Liao et al., ICASSP 2024)}~\cite{52}: A generalizable plug-in rate control scheme that introduces a Rate-Quality ($R-Q_s$) model. Unlike traditional methods, it regulates the bitrate by directly adjusting the scaling parameter $Q_s$ to preserve the hierarchical quality structure of NVC frameworks.
+\end{itemize}
+
+For our proposed methods, we evaluate two variations:
+\begin{itemize}
+    \item \textbf{Proposed-Iter:} Uses the QP-log(R) model with the iterative gradient descent update method.
+    \item \textbf{Proposed-RLS:} Utilizes the Recursive Least Squares (RLS) algorithm for parameter updates, which is expected to yield superior stability and adaptability.
+\end{itemize}
+
+\subsection{Parameter Settings}
+
+We implemented the three baseline methods and made necessary adjustments to adapt them to DCVC-RT. Through extensive parameter search experiments, we selected the optimal settings for each method.
+
+For \textbf{Baseline-Lambda (2014)}~\cite{50}, we adopted the $R-\lambda$ model initialized via fitting on the Bosphorus sequence. The detailed parameter configurations are listed in Table~\ref{tab:params_2014}.
+
+\begin{table}[ht]
+\centering
+\caption{Parameter settings for Baseline-Lambda.}
+\label{tab:params_2014}
+\begin{tabular}{@{}llcl@{}}
+\toprule
+\textbf{Category} & \textbf{Parameter} & \textbf{Value} & \textbf{Description} \\ \midrule
+\multirow{4}{*}{Model} 
+ & Initial $\alpha$ ($\alpha_0$) & 10.0 & Scale factor from fitting \\
+ & Initial $\beta$ ($\beta_0$) & 1.76 & Shape factor from fitting \\
+ & Learning Rate $\alpha$ & 0.1 & Update step size \\
+ & Learning Rate $\beta$ & 0.05 & Update step size \\ \midrule
+\multirow{4}{*}{Control} 
+ & Max Ratio ($r_{up}$) & 1.30 & Max $\lambda$ increase (+30\%) \\
+ & Min Ratio ($r_{down}$) & 0.90 & Max $\lambda$ decrease (-10\%) \\
+ & GOP Size & 8 & Rebalancing interval \\
+ & Sliding Window & 40 & Smoothing window size \\ \bottomrule
+\end{tabular}
+\end{table}
+
+For \textbf{Baseline 2022p (Li et al., 2022)}~\cite{51}, which extends the $\lambda$-domain model with an inter-frame dependency factor $p$, the specific configuration is provided in Table~\ref{tab:params_2022}.
+
+\begin{table}[ht]
+\centering
+\caption{Parameter settings for Baseline 2022p.}
+\label{tab:params_2022}
+\begin{tabular}{@{}llcl@{}}
+\toprule
+\textbf{Category} & \textbf{Parameter} & \textbf{Value} & \textbf{Description} \\ \midrule
+\multirow{5}{*}{Model} 
+ & Initial $\alpha$ ($\alpha_0$) & 10.0 & Base scale factor \\
+ & Initial $\beta$ ($\beta_0$) & 1.76 & Base shape factor \\
+ & Initial $p$ ($p_0$) & 0.2 & Dependency factor \\
+ & Parameter $k$ & 0.1 & Update coefficient \\
+ & $p$ Range & [1e-6, 0.5] & Constraint for stability \\ \midrule
+\multirow{2}{*}{Control} 
+ & Max Ratio ($r_{up}$) & 1.30 & Max $\lambda$ increase \\
+ & Min Ratio ($r_{down}$) & 0.90 & Max $\lambda$ decrease \\ \bottomrule
+\end{tabular}
+\end{table}
+
+For \textbf{Baseline 2024 (Liao et al., 2024)}~\cite{52}, we implemented the $R-Q_s$ model. To align with the positive correlation between QP and bitrate in DCVC-RT, we adapted the model parameters as detailed in Table~\ref{tab:params_2024}.
+
+\begin{table}[ht]
+\centering
+\caption{Parameter settings for Baseline 2024.}
+\label{tab:params_2024}
+\begin{tabular}{@{}llcl@{}}
+\toprule
+\textbf{Category} & \textbf{Parameter} & \textbf{Value} & \textbf{Description} \\ \midrule
+\multirow{4}{*}{Model} 
+ & Initial $C$ ($C_{init}$) & 0.1 & Adapted scale factor \\
+ & Initial $K$ ($K_{init}$) & 2.0 & Power factor \\
+ & LR for $C$ ($\eta$) & 0.01 & Update step size \\
+ & LR for $K$ ($\mu$) & 0.005 & Update step size \\ \midrule
+\multirow{2}{*}{Allocation} 
+ & GOP Size & 32 & Rebalancing interval \\
+ & Sliding Window & 40 & Smoothing window size \\ \bottomrule
+\end{tabular}
+\end{table}
+
+For the proposed methods, we evaluate two variations. Table~\ref{tab:params_v1} details the configuration for the \textbf{Proposed-Iter} method, which utilizes a gradient descent approach on the $QP-\log(R)$ model.
+
+\begin{table}[ht]
+\centering
+\caption{Parameter settings for Proposed-Iter.}
+\label{tab:params_v1}
+\begin{tabular}{@{}llcl@{}}
+\toprule
+\textbf{Category} & \textbf{Parameter} & \textbf{Value} & \textbf{Description} \\ \midrule
+\multirow{4}{*}{Model} 
+ & Initial $a$ ($a_0$) & 14.5 & Slope coefficient \\
+ & Initial $b$ ($b_0$) & 110.0 & Intercept coefficient \\
+ & LR for $a$ ($\eta_a$) & 0.01 & Gradient step size \\
+ & LR for $b$ ($\eta_b$) & 0.10 & Gradient step size \\ \midrule
+\multirow{3}{*}{Allocation} 
+ & GOP Size & 16 & Rebalancing interval \\
+ & Sliding Window & 40 & Smoothing window size \\
+ & Floor Ratio & 0.2 & Min bit budget protection \\ \bottomrule
+\end{tabular}
+\end{table}
+
+Table~\ref{tab:params_v15} presents the settings for the \textbf{Proposed-RLS} method. This version incorporates Recursive Least Squares for parameter estimation and a Smart Smoothing mechanism to enhance stability.
+
+\begin{table}[ht]
+\centering
+\caption{Parameter settings for Proposed-RLS.}
+\label{tab:params_v15}
+\begin{tabular}{@{}llcl@{}}
+\toprule
+\textbf{Category} & \textbf{Parameter} & \textbf{Value} & \textbf{Description} \\ \midrule
+\multirow{2}{*}{Model} 
+ & Initial $a$ ($a_0$) & 14.5 & Base slope \\
+ & Initial $b$ ($b_0$) & 110.0 & Base intercept \\ \midrule
+\multirow{4}{*}{RLS Control} 
+ & Forgetting Factor ($\lambda$) & 0.995 & Memory length for RLS \\
+ & EMA Factor ($\alpha$) & 0.8 & Short-term trend smoothing \\
+ & Smooth Factor & 0.8 & QP variation damping \\
+ & Safety Margin & 0.1 & Error tolerance threshold \\ \midrule
+\multirow{3}{*}{Allocation} 
+ & GOP Size & 8 & Tighter rebalancing interval \\
+ & Sliding Window & 40 & Smoothing window size \\
+ & Floor Ratio & 0.2 & Increased protection ratio \\ \bottomrule
+\end{tabular}
+\end{table}
+
 
 \section{Performance Comparison}
 
-Table~\ref{tab:main_results} summarizes the quantitative results on the HEVC Class B, UVG, and MCL-JCV datasets. The results are averaged across all sequences within each dataset.
+\subsection{Quantitative Results on UVG Dataset}
+
+Table~\ref{tab:full_comparison} presents the comparative results on the UVG dataset. The ``Anchor'' refers to the default rule-based method in DCVC-RT.
+
+First, we analyze the applicability of the baselines. As observed in Table~\ref{tab:full_comparison}, \textbf{Baseline-2022p (Li et al., 2022)} and \textbf{Baseline-2024 (Liao et al., 2024)} exhibit significantly high Bitrate Error (BRE) and unstable R-D performance. 
+Baseline-2022p relies on an inter-frame dependency factor $p$. In our ``Low-Delay P'' configuration (Intra Period = -1), the absence of periodic I-frame resets causes estimation errors to accumulate, leading to severe error propagation. 
+Similarly, Baseline-2024 employs an $R-Q_s$ model tailored for a different architecture. Despite grid search optimization, the model fails to align with the rate-distortion characteristics of DCVC-RT, resulting in model mismatch.
+
+Consequently, these two baselines are excluded from subsequent detailed discussions. The comparison focuses on the \textbf{Anchor} and the \textbf{Baseline-Lambda (2014)}, which generalizes better across architectures.
 
 \begin{table}[htbp]
     \centering
-    \caption{Comparison of Rate Error ($\Delta R$), BD-Rate (PSNR), and Time Ratio (TR) on three benchmark datasets. The anchor is the DVC model without rate control.}
-    \label{tab:main_results}
+    \caption{Comparison of Rate Control Performance on UVG Dataset. Metrics include Bitrate Error (BRE \%) and BD-Rate (PSNR). \textbf{Bold} indicates the best performance, and \underline{underline} indicates the second best. (Note: \textbf{Lower} BRE indicates better accuracy; \textbf{more negative} BD-Rate indicates better coding efficiency.)}
+    \label{tab:full_comparison}
+    
     \resizebox{\textwidth}{!}{%
-    \begin{tabular}{llccc}
-        \toprule
-        \textbf{Dataset} & \textbf{Method} & \textbf{$\Delta R$ (\%)} $\downarrow$ & \textbf{BD-Rate (\%)} $\downarrow$ & \textbf{TR} $\downarrow$ \\
-        \midrule
-        \multirow{3}{*}{\textbf{HEVC Class B}} 
-        & Baseline A [51] & 5.04 & 20.21 & 1.01 \\
-        & Baseline B [28] & 1.35 & -10.99 & 1.04 \\
-        & \textbf{Ours} & \textbf{0.45} & \textbf{-11.50} & \textbf{1.02} \\
-        \midrule
-        \multirow{3}{*}{\textbf{UVG}} 
-        & Baseline A [51] & 6.24 & 16.69 & 1.00 \\
-        & Baseline B [28] & 2.82 & -11.61 & 1.05 \\
-        & \textbf{Ours} & \textbf{0.88} & \textbf{-12.10} & \textbf{1.01} \\
-        \midrule
-        \multirow{3}{*}{\textbf{MCL-JCV}} 
-        & Baseline A [51] & 4.50 & 15.30 & 1.02 \\
-        & Baseline B [28] & 2.79 & -8.78 & 1.06 \\
-        & \textbf{Ours} & \textbf{1.10} & \textbf{-9.20} & \textbf{1.03} \\
-        \bottomrule
-    \end{tabular}%
+        \begin{tabular}{l cccccccccccc}
+            \toprule
+            \textbf{Sequence} & \multicolumn{2}{c}{\textbf{Anchor}} & \multicolumn{2}{c}{\textbf{Baseline-Lambda}} & \multicolumn{2}{c}{\textbf{Baseline-2022p}} & \multicolumn{2}{c}{\textbf{Baseline-2024}} & \multicolumn{2}{c}{\textbf{Prop-Iter}} & \multicolumn{2}{c}{\textbf{Prop-RLS}} \\
+            \cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7} \cmidrule(lr){8-9} \cmidrule(lr){10-11} \cmidrule(lr){12-13}
+             & BRE & BD-R & BRE & BD-R & BRE & BD-R & BRE & BD-R & BRE & BD-R & BRE & BD-R \\
+            \midrule
+            Beauty        & 2.48 & 0.0 & 0.73 & 2.4   & 122.17 & \underline{-2.5}  & 47.84 & 9.2   & \textbf{0.10} & -1.6  & \underline{0.15} & \textbf{-4.0}  \\
+            Bosphorus     & 3.64 & 0.0 & \underline{2.47} & 3.9   & 248.19 & -0.7  & 50.54 & -8.4  & \textbf{0.28} & \textbf{-17.6} & 4.09 & \underline{-15.3} \\
+            HoneyBee      & \underline{4.38} & 0.0 & 4.89 & \underline{-43.9} & 79.12  & -38.4 & 58.09 & -14.8 & 7.53 & -41.4 & \textbf{1.85} & \textbf{-49.5} \\
+            Jockey        & 1.62 & 0.0 & \underline{0.18} & -2.4  & 228.62 & \textbf{-4.2}  & 28.43 & 3.8   & \textbf{0.06} & -0.5  & 3.21 & \underline{-3.4}  \\
+            ReadySteadyGo & 2.47 & 0.0 & 1.19 & -3.5  & 356.04 & -3.8  & 21.47 & -2.5  & \textbf{0.28} & \underline{-4.4}  & \underline{0.96} & \textbf{-6.1}  \\
+            ShakeNDry     & \underline{3.32} & 0.0 & 7.60 & -10.7 & 347.81 & 2.5   & 35.98 & \underline{-16.3} & 8.76 & -14.9 & \textbf{2.92} & \textbf{-21.4} \\
+            YachtRide     & 2.28 & 0.0 & 1.67 & -1.0  & 598.36 & -0.9  & 22.21 & 0.2   & \textbf{0.14} & \underline{-2.9}  & \underline{0.24} & \textbf{-4.7}  \\
+            \midrule
+            \textbf{Average} & 2.88 & 0.0 & 2.68 & -7.9 & 282.90 & -6.9 & 37.79 & -4.1 & \underline{2.45} & \underline{-11.9} & \textbf{1.92} & \textbf{-14.9} \\
+            \bottomrule
+        \end{tabular}%
     }
 \end{table}
 
-\paragraph{Rate Control Accuracy} 
-As shown in Table~\ref{tab:main_results}, our method achieves the lowest bitrate error across all datasets. Specifically, on the challenging HEVC Class B dataset, our method maintains a $\Delta R$ of only \textbf{0.45\%}, whereas Baseline A and B exhibit errors of 5.04\% and 1.35\%, respectively. This demonstrates the robustness of our [INSERT YOUR MECHANISM, e.g., parameter updating strategy] in adhering to the target bitrate constraint.
+The results demonstrate that our proposed RLS-based method significantly outperforms the baselines. While the Anchor and Baseline-Lambda maintain reasonable bitrate accuracy (Average BRE of 2.88\% and 2.68\%, respectively), the \textbf{Proposed-RLS} achieves a superior Average BRE of \textbf{1.92\%}. More importantly, in terms of coding efficiency, the proposed method achieves an average BD-Rate reduction of \textbf{14.9\%}, significantly surpassing the 7.9\% reduction achieved by Baseline-Lambda.
 
-\paragraph{R-D Performance}
-Regarding coding efficiency, our method demonstrates superior performance. While traditional rate control schemes often degrade R-D performance (positive BD-Rate) due to suboptimal bit allocation, our method achieves a BD-Rate saving of \textbf{-11.50\%} on HEVC Class B. This indicates that our rate allocation strategy not only meets the rate constraints but also intelligently distributes bits to optimize reconstruction quality, outperforming even the variable-rate baselines.
 
-\paragraph{Computational Efficiency}
-The Time Ratio (TR) column highlights the efficiency of our approach. With an average TR of approximately \textbf{1.02}, our method introduces only a marginal 2\% increase in encoding time compared to the anchor. This confirms that our rate control module is lightweight and suitable for practical applications, contrasting with optimization-based approaches that may require iterative pre-encoding.
+\subsection{Generalization on Diverse Datasets}
 
-\section{Ablation Studies and Parametric Analysis}
-% % 一些之前其他 work 都沒有完整提供的 Parameter tuning 過程
+We further extended the evaluation to the MCL-JCV and HEVC Class B datasets to assess the generalization capability of our method. Table~\ref{tab:mcl_jcv_performance} and Table~\ref{tab:hevc_b_performance} summarize the results.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Rate Control Performance on the MCL-JCV Dataset. \textbf{Bold} indicates best, \underline{underline} indicates second best. (Note: \textbf{Lower} BRE is better; \textbf{more negative} BD-Rate is better.)}
+    \label{tab:mcl_jcv_performance}
+    \scriptsize 
+    \resizebox{\textwidth}{!}{%
+        \begin{tabular}{lcccccc}
+            \toprule
+            \textbf{Sequence} & \multicolumn{2}{c}{\textbf{Anchor}} & \multicolumn{2}{c}{\textbf{Baseline-Lambda}} & \multicolumn{2}{c}{\textbf{Prop-RLS}} \\
+            \cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7}
+            (videoSRC) & BRE (\%) & BD-Rate & BRE (\%) & BD-Rate & BRE (\%) & BD-Rate \\
+            \midrule
+            01 & 12.19 & 0.0 & \textbf{5.60} & \underline{-37.9} & \underline{9.07} & \textbf{-48.3} \\
+            02 & \underline{3.44} & 0.0 & \textbf{0.55} & \underline{-5.5} & 5.68 & \textbf{-9.6} \\
+            03 & 10.89 & 0.0 & \underline{3.71} & \underline{-21.9} & \textbf{1.21} & \textbf{-27.5} \\
+            05 & 6.40 & \underline{0.0} & \textbf{0.13} & \textbf{-5.4} & \underline{1.28} & 3.2 \\
+            07 & 8.11 & \underline{0.0} & \textbf{0.27} & \underline{0.0} & \underline{1.63} & \textbf{-8.4} \\
+            08 & 10.63 & \underline{0.0} & \textbf{1.00} & 7.8 & \underline{2.02} & \textbf{-19.9} \\
+            09 & 11.26 & 0.0 & \textbf{0.92} & \textbf{-8.2} & \underline{3.64} & \underline{-6.3} \\
+            10 & 2.29 & \underline{0.0} & \underline{0.29} & \textbf{-3.8} & \textbf{0.22} & 7.5 \\
+            11 & 5.75 & 0.0 & \textbf{0.51} & \textbf{-6.0} & \underline{1.47} & \underline{-5.2} \\
+            13 & \underline{17.83} & \underline{0.0} & 20.57 & \textbf{-16.4} & \textbf{8.26} & 2.1 \\
+            14 & 6.72 & \underline{0.0} & \textbf{0.66} & 2.9 & \underline{2.57} & \textbf{-3.1} \\
+            15 & 10.65 & 0.0 & \underline{8.92} & \underline{-43.5} & \textbf{2.75} & \textbf{-45.5} \\
+            16 & 11.86 & 0.0 & \underline{1.17} & \underline{-12.5} & \textbf{0.13} & \textbf{-14.9} \\
+            17 & 9.47 & 0.0 & \textbf{0.36} & \underline{-3.3} & \underline{0.69} & \textbf{-4.7} \\
+            22 & 4.79 & 0.0 & \textbf{0.31} & \textbf{-14.7} & \underline{2.48} & \underline{-9.3} \\
+            23 & 9.62 & 0.0 & \textbf{0.67} & \underline{-10.3} & \underline{2.57} & \textbf{-12.6} \\
+            24 & 6.35 & 0.0 & \underline{0.84} & \underline{-0.3} & \textbf{0.30} & \textbf{-4.9} \\
+            25 & 7.56 & \underline{0.0} & \underline{3.54} & \textbf{-2.0} & \textbf{3.51} & 2.6 \\
+            26 & 5.58 & \underline{0.0} & \textbf{1.25} & 3.1 & \underline{2.15} & \textbf{-3.1} \\
+            28 & 10.94 & 0.0 & \textbf{2.77} & \underline{-22.5} & \underline{4.50} & \textbf{-24.9} \\
+            \midrule
+            \textbf{Average} & 8.62 & 0.0 & \textbf{2.70} & \underline{-10.02} & \underline{2.81} & \textbf{-11.64} \\
+            \bottomrule
+        \end{tabular}%
+    }
+\end{table}
+
+\begin{table}[htbp]
+    \centering
+    \caption{Rate Control Performance on the HEVC Class B Dataset. (Note: \textbf{Lower} BRE is better; \textbf{more negative} BD-Rate is better.)}
+    \label{tab:hevc_b_performance}
+    \resizebox{\textwidth}{!}{%
+        \begin{tabular}{lcccccc}
+            \toprule
+            \textbf{Sequence} & \multicolumn{2}{c}{\textbf{Anchor}} & \multicolumn{2}{c}{\textbf{Baseline-Lambda}} & \multicolumn{2}{c}{\textbf{Prop-RLS}} \\
+            \cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7}
+             & BRE (\%) & BD-Rate & BRE (\%) & BD-Rate & BRE (\%) & BD-Rate \\
+            \midrule
+            BQTerrace       & 6.63 & 0.0 & \textbf{3.82} & 3.7   & \underline{4.17} & \textbf{-18.6} \\
+            BasketballDrive & 1.64 & 0.0 & \underline{0.23} & \underline{-2.6}  & \textbf{0.15} & \textbf{-5.9} \\
+            Cactus          & 3.95 & 0.0 & \underline{1.34} & \underline{-7.0}  & \textbf{0.19} & \textbf{-10.0} \\
+            ParkScene       & 7.90 & 0.0 & \textbf{2.85} & \underline{-22.7} & \underline{7.89} & \textbf{-24.3} \\
+            \midrule
+            \textbf{Average} & 5.03 & 0.0 & \textbf{2.06} & \underline{-7.15} & \underline{3.10} & \textbf{-14.70} \\
+            \bottomrule
+        \end{tabular}%
+    }
+\end{table}
+
+\noindent \textbf{Discussion and Insights}
+
+The experimental results across the UVG, HEVC-B, and MCL-JCV datasets reveal a distinct correlation between the temporal stability of the video content and the efficacy of the proposed RLS-based control.
+
+As evidenced by the results, the \textbf{Prop-RLS} method yields the most significant coding efficiency gains on high-frame-rate datasets with stable motion. On the UVG dataset (120 fps), which features smooth camera movements and high temporal redundancy, our method achieves a substantial BD-Rate reduction of \textbf{14.9\%}. Similarly, on the HEVC Class B dataset (typically 50--60 fps), sequences like \textit{BasketballDrive} and \textit{Cactus} exhibit strong performance improvements. This can be attributed to the RLS algorithm's ability to effectively leverage historical data to refine its parameter estimation when inter-frame correlations are strong and consistent.
+
+Conversely, for content with lower frame rates or more erratic motion, the advantage of the RLS approach becomes less pronounced. For instance, in the \textit{ParkScene} sequence (24 fps), while the RLS method still outperforms the Baseline-Lambda in terms of BD-Rate (-24.3\% vs. -22.7\%), the margin is narrower compared to the 60 fps sequences, and the bitrate error (BRE) slightly increases. In such complex, fast-changing scenarios, the historical data becomes less predictive of future frames, causing the performance to converge towards that of a standard gradient-based controller.
+
+In conclusion, our proposed method aligns well with the target scenario of \textbf{video conferencing and real-time streaming}, which typically involves fixed-camera setups, stable viewpoints, and continuous scenes. Under these conditions, the RLS-based rate control successfully maximizes coding efficiency while maintaining stable bitrate regulation.
+
+
+
+
+\subsection{Environment Specifications and Computational Overhead}
+
+Finally, we evaluated the time complexity of the implemented rate control schemes. Experiments were conducted on a single NVIDIA GeForce RTX 5090 GPU. All methods were executed in a single-process mode and tested on the "Beauty" sequence (600 frames) from the UVG dataset. The tests were repeated four times, yielding an average inference time of approximately 7 ms per frame. To assess the computational cost, we calculated the Time Ratio (TR) using the original anchor model (sourced from the official GitHub repository without rate control) as the baseline. As shown in the summary below, all methods exhibit a TR close to 1:
+
+\begin{table}[htbp]
+    \centering
+    % 您可以根據需要修改標題
+    \caption{Comparison of Time Overhead relative to the Rule-Based method.}
+    \label{tab:time_overhead}
+    
+    \begin{tabular}{lccc}
+        \toprule
+         & \textbf{Rule-Based} & \textbf{2014-lambda} & \textbf{Prop-RLS} \\
+        \midrule
+        Time Overhead & 1.003 & 1.003 & 1.013 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+These results confirm that the proposed algorithm, along with the baselines, operates with negligible computational overhead. They are fully capable of supporting one-pass rate control in real-time systems without bottlenecking the encoding process.
+
+
+
+\section{Parametric Analysis and Robustness}
+
+A key advantage of the proposed RLS-based controller is its robustness against hyperparameter initialization and tuning. Traditional gradient-based methods are typically sensitive to initial values and step sizes (learning rates), often requiring precise tuning to avoid divergence. To validate the superiority of our method, we conducted extensive ablation studies focusing on parameter initialization and update dynamics.
+
+\subsection{Robustness to Initialization}
+
+We first examined the impact of the initial model parameters on Rate-Distortion (R-D) performance. Table~\ref{tab:proposed_init} and Table~\ref{tab:2014_init} detail the performance of the Proposed-RLS and the Baseline-Lambda methods under various initialization settings.
+
+For the \textbf{Proposed-RLS} method (Table~\ref{tab:proposed_init}), the parameter $a$ represents the slope in the logarithmic domain ($QP \approx a \cdot \log(R) + b$). We tested initial values ranging from $a=12$ to $a=20$. The results demonstrate remarkable stability. The best performance is achieved at \textbf{Init-A16} (Average BD-Rate of -14.9\%). Even when the initialization deviates significantly—for instance, at \textbf{Init-A12} or \textbf{Init-A20}—the method continues to provide substantial coding gains (Average BD-Rates of -13.1\% and -6.5\%, respectively). This indicates that the RLS algorithm can effectively correct initial estimation errors via its covariance matrix updates, preventing performance collapse.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Ablation Study on Initialization Parameter (Proposed-RLS). \textbf{Bold} indicates the best performance. (Note: Robustness is shown by maintaining low BRE and negative BD-Rate across settings.)}
+    \label{tab:proposed_init}
+    \resizebox{\textwidth}{!}{%
+        \begin{tabular}{lcccccccccc}
+            \toprule
+            \textbf{Sequence} & \multicolumn{2}{c}{\textbf{Init-A12}} & \multicolumn{2}{c}{\textbf{Init-A14}} & \multicolumn{2}{c}{\textbf{Init-A16}} & \multicolumn{2}{c}{\textbf{Init-A18}} & \multicolumn{2}{c}{\textbf{Init-A20}} \\
+            \cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7} \cmidrule(lr){8-9} \cmidrule(lr){10-11}
+             & BRE & BD-R & BRE & BD-R & BRE & BD-R & BRE & BD-R & BRE & BD-R \\
+            \midrule
+            Beauty        & 0.17 & -4.1  & 0.19 & \textbf{-5.0}  & \textbf{0.15} & -4.0  & \textbf{0.15} & -3.2  & 0.18 & -2.6 \\
+            Bosphorus     & 7.50 & -13.9 & 7.56 & \textbf{-15.4} & \textbf{4.09} & -15.3 & 12.97 & -13.4 & 7.92 & -9.3 \\
+            HoneyBee      & 17.17 & -41.1 & 2.97 & -48.8 & \textbf{1.85} & \textbf{-49.5} & 2.73 & -41.8 & 4.14 & -42.6 \\
+            Jockey        & 3.24 & -2.5  & 3.22 & -2.8  & \textbf{3.21} & -3.4  & 3.30 & \textbf{-3.6}  & 3.39 & -3.0 \\
+            ReadySteadyGo & 0.59 & -5.1  & \textbf{0.56} & -5.7  & 0.96 & \textbf{-6.1}  & 0.86 & -5.3  & 0.57 & -2.6 \\
+            ShakeNDry     & 4.74 & -21.0 & 10.97 & -18.5 & \textbf{2.92} & \textbf{-21.4} & 4.95 & 31.6  & 4.26 & 20.5 \\
+            YachtRide     & \textbf{0.15} & -4.0  & 0.20 & -4.5  & 0.24 & -4.7  & 0.36 & \textbf{-5.8}  & 0.25 & \textbf{-5.8} \\
+            \midrule
+            \textbf{Average} & 4.79 & -13.1 & 3.67 & -14.4 & \textbf{1.92} & \textbf{-14.9} & 3.62 & -5.9  & 2.96 & -6.5 \\
+            \bottomrule
+        \end{tabular}%
+    }
+\end{table}
+
+In stark contrast, the \textbf{Baseline-Lambda} (Table~\ref{tab:2014_init}) exhibits high sensitivity to its scaling parameter $\alpha$. While it performs well at the optimal setting (\textbf{Init-A10}, BD-Rate -7.9\%), the performance degrades drastically as $\alpha$ increases. At \textbf{Init-A500} and \textbf{Init-A1000}, the method fails to converge properly, resulting in a catastrophic increase in BD-Rate (+10.1\% and +16.3\% respectively), effectively acting as a coding loss. This comparison highlights that the RLS-based approach is significantly more robust to initial parameter deviations.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Ablation Study on Initialization Parameter (Baseline-Lambda). (Note: High BRE and positive BD-Rate indicate model divergence.)}
+    \label{tab:2014_init}
+    \resizebox{\textwidth}{!}{%
+        \begin{tabular}{lcccccccccc}
+            \toprule
+            \textbf{Sequence} & \multicolumn{2}{c}{\textbf{Init-A10}} & \multicolumn{2}{c}{\textbf{Init-A50}} & \multicolumn{2}{c}{\textbf{Init-A100}} & \multicolumn{2}{c}{\textbf{Init-A500}} & \multicolumn{2}{c}{\textbf{Init-A1000}} \\
+            \cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7} \cmidrule(lr){8-9} \cmidrule(lr){10-11}
+             & BRE & BD-R & BRE & BD-R & BRE & BD-R & BRE & BD-R & BRE & BD-R \\
+            \midrule
+            Beauty        & 0.73 & 2.4   & \textbf{0.62} & 0.7   & 0.99 & \textbf{-1.4}  & 0.81 & 6.6   & 1.45 & 12.1 \\
+            Bosphorus     & \textbf{2.47} & \textbf{3.9}   & 4.72 & 22.1  & 3.83 & 32.1  & 7.06 & 67.8  & 8.32 & 73.9 \\
+            HoneyBee      & \textbf{4.89} & \textbf{-43.9} & 6.67 & -34.9 & 5.86 & -37.3 & 7.68 & -27.6 & 11.57& -16.0 \\
+            Jockey        & \textbf{0.18} & \textbf{-2.4}  & 0.24 & -1.8  & 0.43 & -1.7  & 0.73 & -1.3  & 0.73 & 0.6  \\
+            ReadySteadyGo & \textbf{1.19} & \textbf{-3.5}  & 1.35 & -1.8  & 1.72 & 1.1   & 2.12 & 14.9  & 2.05 & 28.2 \\
+            ShakeNDry     & 7.60 & -10.7 & \textbf{3.93} & -19.8 & 4.07 & \textbf{-22.8} & 6.16 & -9.9  & 5.04 & -11.3 \\
+            YachtRide     & 1.67 & -1.0  & \textbf{1.23} & \textbf{-2.8}  & 2.76 & 2.9   & 2.59 & 20.3  & 2.78 & 26.3 \\
+            \midrule
+            \textbf{Average} & \textbf{2.68} & \textbf{-7.9} & \textbf{2.68} & -5.5 & 2.81 & -3.9 & 3.88 & 10.1 & 4.56 & 16.3 \\
+            \bottomrule
+        \end{tabular}%
+    }
+\end{table}
+
+\subsection{Sensitivity to Update Dynamics}
+
+We further analyzed the sensitivity of the update mechanisms: the Forgetting Factor ($\lambda$) for the Proposed-RLS method and the Learning Rate (LR) for the Baseline-Lambda.
+
+Table~\ref{tab:proposed_lambda} presents the performance of Proposed-RLS with varying $\lambda$. The method exhibits high stability across a wide range of values. From $\lambda=0.960$ to $\lambda=0.995$, the Average BD-Rate remains consistently negative (better than -10.9\%), with the optimal performance observed at \textbf{Lambda-995} (BD-Rate -14.9\%). This suggests that the RLS formulation is not brittle and can maintain effective control without requiring extremely precise tuning of the forgetting factor.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Ablation Study on Forgetting Factor $\lambda$ (Proposed-RLS). \textbf{Bold} indicates the best performance. (Note: Consistently negative BD-Rate indicates high stability.)}
+    \label{tab:proposed_lambda}
+    \resizebox{\textwidth}{!}{%
+        \begin{tabular}{lcccccccccc}
+            \toprule
+            \textbf{Sequence} & \multicolumn{2}{c}{\textbf{Lambda-960}} & \multicolumn{2}{c}{\textbf{Lambda-970}} & \multicolumn{2}{c}{\textbf{Lambda-980}} & \multicolumn{2}{c}{\textbf{Lambda-990}} & \multicolumn{2}{c}{\textbf{Lambda-995}} \\
+            \cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7} \cmidrule(lr){8-9} \cmidrule(lr){10-11}
+             & BRE & BD-R & BRE & BD-R & BRE & BD-R & BRE & BD-R & BRE & BD-R \\
+            \midrule
+            Beauty            & \textbf{0.09} & -3.7          & 0.13          & -3.8          & 0.16          & \textbf{-4.1} & 0.18          & \textbf{-4.1} & 0.15          & -4.0 \\
+            Bosphorus         & 8.58          & -5.4          & 7.41          & -6.2          & 3.59          & -8.6          & \textbf{2.58} & -11.5         & 4.09          & \textbf{-15.3} \\
+            HoneyBee          & \textbf{0.87} & -49.6         & 1.78          & \textbf{-49.8}& 2.89          & -34.8         & 1.99          & -49.0         & 1.85          & -49.5 \\
+            Jockey            & \textbf{0.90} & 1.2           & 1.24          & 1.5           & 1.84          & 1.5           & 4.35          & -2.3          & 3.21          & \textbf{-3.4} \\
+            ReadySteadyGo     & 1.99          & \textbf{-7.8} & 1.79          & -7.4          & 1.62          & -7.5          & 1.40          & -7.1          & \textbf{0.96} & -6.1 \\
+            ShakeNDry         & 5.02          & -20.0         & 18.05         & -12.0         & 5.33          & -18.0         & 3.12          & -20.5         & \textbf{2.92} & \textbf{-21.4} \\
+            YachtRide         & 0.07          & \textbf{-4.8} & \textbf{0.01} & \textbf{-4.8} & 0.05          & \textbf{-4.8} & 0.05          & \textbf{-4.8} & 0.24          & -4.7 \\
+            \midrule
+            \textbf{Average}  & 2.50          & -12.9         & 4.34          & -11.8         & 2.21          & -10.9         & 1.95          & -14.2         & \textbf{1.92} & \textbf{-14.9} \\
+            \bottomrule
+        \end{tabular}%
+    }
+\end{table}
+
+On the other hand, Table~\ref{tab:2014_lr} reveals that the Baseline-Lambda is highly sensitive to the Learning Rate. While moderate rates (e.g., Lr0.05 and Lr0.1) yield good performance, increasing the learning rate to \textbf{Lr0.5} causes the model to diverge, resulting in a massive performance penalty (Average BD-Rate of +34.3\%). This confirms that the proposed RLS method offers superior stability and ease of tuning compared to traditional gradient-based approaches.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Ablation Study on Learning Rate (Baseline-Lambda). \textbf{Bold} indicates the best performance. (Note: Large positive BD-Rate values at Lr0.5 indicate catastrophic failure.)}
+    \label{tab:2014_lr}
+    \resizebox{\textwidth}{!}{%
+        \begin{tabular}{lcccccccccc}
+            \toprule
+            \textbf{Sequence} & \multicolumn{2}{c}{\textbf{Lr0.025}} & \multicolumn{2}{c}{\textbf{Lr0.05}} & \multicolumn{2}{c}{\textbf{Lr0.1}} & \multicolumn{2}{c}{\textbf{Lr0.25}} & \multicolumn{2}{c}{\textbf{Lr0.5}} \\
+            \cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7} \cmidrule(lr){8-9} \cmidrule(lr){10-11}
+             & BRE & BD-R & BRE & BD-R & BRE & BD-R & BRE & BD-R & BRE & BD-R \\
+            \midrule
+            Beauty            & 3.49          & 5.7           & \textbf{0.32} & 5.3           & 0.73          & \textbf{2.4}  & 0.78          & 9.7           & 2.29          & 40.3 \\
+            Bosphorus         & 4.52          & \textbf{-9.8} & \textbf{1.27} & -5.0          & 2.47          & 3.9           & 5.84          & 49.3          & 7.12          & 73.2 \\
+            HoneyBee          & \textbf{2.84} & -25.2         & 3.81          & -32.2         & 4.89          & \textbf{-43.9}& 18.54         & 14.1          & 23.02         & 51.5 \\
+            Jockey            & 2.64          & -2.2          & 1.11          & \textbf{-2.8} & \textbf{0.18} & -2.4          & 0.86          & 0.0           & 2.12          & 17.8 \\
+            ReadySteadyGo     & 2.52          & \textbf{-4.6} & 1.22          & -3.9          & \textbf{1.19} & -3.5          & 1.35          & -1.2          & 2.64          & 25.6 \\
+            ShakeNDry         & 10.30         & -4.2          & 9.92          & 6.9           & 7.60          & -10.7         & \textbf{6.08} & \textbf{-12.4}& 6.96          & 13.4 \\
+            YachtRide         & 2.53          & \textbf{-2.1} & \textbf{0.88} & -1.0          & 1.67          & -1.0          & 1.49          & 0.4           & 2.78          & 18.3 \\
+            \midrule
+            \textbf{Average}  & 4.12          & -6.1          & \textbf{2.65} & -4.7          & 2.68          & \textbf{-7.9} & 4.99          & 8.6           & 6.70          & 34.3 \\
+            \bottomrule
+        \end{tabular}%
+    }
+\end{table}
+
+\section{Summary}
+
+In this chapter, we presented a comprehensive evaluation of the proposed rate control framework within the DCVC-RT architecture. Through extensive experiments across the UVG, MCL-JCV, and HEVC Class B datasets, we validated the superiority of the RLS-based approach compared to both rule-based and gradient-based baselines.
+
+The key findings from our experiments can be summarized as follows:
+\begin{itemize}
+    \item \textbf{Superior Coding Efficiency:} The Proposed-RLS method consistently achieved the best Rate-Distortion performance, yielding an average BD-Rate reduction of 14.9\% on the UVG dataset. The insights reveal that the method is particularly effective for high-frame-rate sequences and continuous scenes typical of video conferencing.
+    \item \textbf{High Accuracy and Stability:} With an average Bitrate Error (BRE) of 1.92\%, the proposed controller demonstrated precise rate regulation capabilities, effectively minimizing deviations from the target bandwidth.
+    \item \textbf{Robustness:} Ablation studies confirmed that the RLS algorithm exhibits remarkable robustness against initial parameter mismatches and is insensitive to hyperparameter variations. This contrasts sharply with traditional gradient-based methods, which are prone to divergence under suboptimal settings.
+    \item \textbf{Real-Time Feasibility:} The computational complexity analysis showed that our method introduces negligible overhead (Time Ratio $\approx$ 1.01), ensuring that the real-time performance of DCVC-RT is preserved.
+\end{itemize}
+
+Collectively, these results demonstrate that the proposed RLS-based rate control scheme provides a robust, efficient, and high-performance solution tailored for real-time neural video coding applications.

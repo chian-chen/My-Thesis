@@ -1,6 +1,24 @@
 % !TeX root = ../main.tex
 
 \chapter{Conclusion}
+\label{chap:conclusion}
 
 \section{Summary of Contributions}
+This thesis has presented a robust rate control framework tailored for real-time Neural Video Coding (NVC), specifically DCVC-RT. Addressing the challenges of conditional coding and periodic refresh mechanisms, we proposed an Adaptive State-Space Rate Control system. The primary contributions are summarized as follows:
+
+\begin{enumerate}
+    \item \textbf{Dual-State RLS Estimation:} We established a Log-linear R-QP model and proposed a \textbf{Dual-State Recursive Least Squares (RLS)} algorithm. By temporally decoupling the estimation for standard P-frames and Refresh frames, this method resolves the ``Model Shattering'' phenomenon, preventing parameter corruption caused by systemic outliers.
+
+    \item \textbf{Stabilized Control Loop:} We introduced a hierarchical budgeting strategy combined with a \textbf{Double-Smoothing mechanism} (Parameter EMA and Smart Output Smoothing). This design effectively filters estimation noise while dynamically balancing buffer safety against visual stability.
+\end{enumerate}
+
+Experimental results on the UVG dataset demonstrate that our framework achieves an average BD-Rate reduction of \textbf{14.9\%} compared to the anchor. Furthermore, the ablation studies confirm that the proposed RLS-based method exhibits superior robustness to hyperparameter variations compared to traditional gradient-based approaches.
+
 \section{Limitations and Future Work}
+While the proposed method demonstrates high efficiency and stability, there are promising avenues for future research:
+
+\begin{itemize}
+    \item \textbf{Scene Cut Adaptation:} The current RLS estimator relies on historical statistics, which can be disrupted by abrupt shot changes. Future work should incorporate a scene-change detector to reset the covariance matrix, enabling faster convergence during hard cuts.
+
+    \item \textbf{End-to-End Joint Optimization:} This study treats the encoder as a black-box model. A potential direction is to jointly train a lightweight rate control network with the compression backbone, allowing the system to leverage internal latent features for more precise "look-ahead" bit allocation.
+\end{itemize}
