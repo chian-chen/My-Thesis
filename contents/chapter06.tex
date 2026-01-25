@@ -4,21 +4,27 @@
 \label{chap:conclusion}
 
 \section{Summary of Contributions}
-This thesis has presented a robust rate control framework tailored for real-time Neural Video Coding (NVC), specifically DCVC-RT. Addressing the challenges of conditional coding and periodic refresh mechanisms, we proposed an Adaptive State-Space Rate Control system. The primary contributions are summarized as follows:
+This thesis has presented a robust rate control framework tailored for real-time Neural Video Coding (NVC), specifically targeting the state-of-the-art DCVC-RT architecture. By systematically analyzing the rate-distortion characteristics and the internal refresh mechanisms of the codec, we proposed an Adaptive State-Space Rate Control system. The primary contributions are summarized as follows:
 
 \begin{enumerate}
-    \item \textbf{Dual-State RLS Estimation:} We established a Log-linear R-QP model and proposed a \textbf{Dual-State Recursive Least Squares (RLS)} algorithm. By temporally decoupling the estimation for standard P-frames and Refresh frames, this method resolves the ``Model Shattering'' phenomenon, preventing parameter corruption caused by systemic outliers.
+    \item \textbf{Validated Log-Linear R-QP Model:} Through exhaustive experimentation on parameter space, we empirically verified the high linearity ($R^2 \approx 0.99$) between the quantization parameter (QP) and the logarithm of the bitrate. This provides a solid mathematical foundation for modeling the rate-distortion relationship in black-box neural codecs.
 
-    \item \textbf{Stabilized Control Loop:} We introduced a hierarchical budgeting strategy combined with a \textbf{Double-Smoothing mechanism} (Parameter EMA and Smart Output Smoothing). This design effectively filters estimation noise while dynamically balancing buffer safety against visual stability.
+    \item \textbf{Dual-State RLS Estimation:} We introduced a \textbf{Dual-State Recursive Least Squares (RLS)} algorithm to address the periodic "refresh" mechanism in DCVC-RT. By temporally decoupling the estimation states for standard P-frames (which utilize long-term feature propagation) and Refresh frames (which block error propagation), this method effectively resolves the outlier-induced "Model Shattering" phenomenon, ensuring stable parameter tracking.
+
+    \item \textbf{Hierarchical Bit Allocation:} Leveraging the temporal feature propagation nature of NVC, we designed a hierarchical weighting strategy. This approach assigns higher bit budgets to key frames to enhance feature quality for subsequent frames, optimizing the overall rate-distortion performance while preventing buffer starvation through a floor protection mechanism.
+
+    \item \textbf{Real-Time Efficiency:} Extensive experiments on the UVG and HEVC-B datasets demonstrate that our framework achieves an average BD-Rate reduction of approximately \textbf{14.9\%} compared to the rule-based anchor. Crucially, the proposed method imposes a negligible computational overhead of less than \textbf{1\%}, preserving the real-time advantage of the underlying DCVC-RT architecture.
 \end{enumerate}
 
-Experimental results on the UVG dataset demonstrate that our framework achieves an average BD-Rate reduction of \textbf{14.9\%} compared to the anchor. Furthermore, the ablation studies confirm that the proposed RLS-based method exhibits superior robustness to hyperparameter variations compared to traditional gradient-based approaches.
-
 \section{Limitations and Future Work}
-While the proposed method demonstrates high efficiency and stability, there are promising avenues for future research:
+While the proposed method demonstrates high efficiency and stability, the current study identifies several promising avenues for future research:
 
 \begin{itemize}
-    \item \textbf{Scene Cut Adaptation:} The current RLS estimator relies on historical statistics, which can be disrupted by abrupt shot changes. Future work should incorporate a scene-change detector to reset the covariance matrix, enabling faster convergence during hard cuts.
+    \item \textbf{End-to-End Joint Optimization:} The current approach treats the neural encoder primarily as a black box. A potential direction is to jointly train a lightweight rate control network alongside the compression backbone. This would allow the system to leverage internal latent features for more precise, content-aware bit allocation, rather than relying solely on historical statistics.
 
-    \item \textbf{End-to-End Joint Optimization:} This study treats the encoder as a black-box model. A potential direction is to jointly train a lightweight rate control network with the compression backbone, allowing the system to leverage internal latent features for more precise "look-ahead" bit allocation.
+    \item \textbf{Complexity-Performance Trade-off:} Our results indicate that the current RLS-based estimator is extremely lightweight. This suggests a margin to explore slightly more complex estimation models (e.g., increasing parameter count or introducing higher-order terms) to further improve prediction accuracy without violating real-time constraints.
+
+    \item \textbf{Dynamic Target Rate Adaptation:} The current experimental setup assumes a constant target bitrate. However, real-world network conditions fluctuate dynamically. Future work should involve designing datasets and experiments that simulate variable bandwidth scenarios (VBR) to test the system's responsiveness to sudden changes in the target bitrate constraint.
+
+    \item \textbf{Scene Cut Robustness:} Although not the primary focus of this study, abrupt scene changes can disrupt the historical statistics relied upon by the RLS estimator. Integrating a scene-change detector to reset the covariance matrix or adjust the forgetting factor adaptively would further enhance robustness during hard cuts.
 \end{itemize}
